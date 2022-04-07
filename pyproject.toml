@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "qcore"
+version = "0.1.0"
+description = "The codebase for running circuit QED experiments in qcrew's lab"
+authors = ["qcrew <general.qcrew@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+qm-qua = "^0.3.6"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.1.1"
+black = "^22.3.0"
+Sphinx = "^4.5.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
