@@ -267,11 +267,11 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "labctrl"
-version = "0.3.0"
+version = "0.4"
 description = "A unified framework for controlling and visualizing data collected from programmable lab instruments"
 category = "main"
 optional = false
-python-versions = ">=3.9,<3.11"
+python-versions = ">=3.10,<3.11"
 
 [package.dependencies]
 h5py = ">=3.6.0,<4.0.0"
@@ -854,7 +854,7 @@ dev = ["black (>=19.3b0)", "pytest (>=4.6.2)"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.10,<3.11"
-content-hash = "ad03606ecf9181a10d515db46752b3b3d8839af001e2cd2dd30e0c1a374f958c"
+content-hash = "359cda198ace621028875e4094bade15955b2d44506cdd555cb4ddd320bc8802"
 
 [metadata.files]
 alabaster = [
@@ -1099,7 +1099,10 @@ kiwisolver = [
     {file = "kiwisolver-1.4.4-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:36dafec3d6d6088d34e2de6b85f9d8e2324eb734162fba59d2ba9ed7a2043d5b"},
     {file = "kiwisolver-1.4.4.tar.gz", hash = "sha256:d41997519fcba4a1e46eb4a2fe31bc12f0ff957b2b81bac28db24744f333e955"},
 ]
-labctrl = []
+labctrl = [
+    {file = "labctrl-0.4-py3-none-any.whl", hash = "sha256:372a8a9467249301e79155a3961f83ade438a755fae20e8e9673054a437c2e6d"},
+    {file = "labctrl-0.4.tar.gz", hash = "sha256:8091450a3330dd047227c5d773eee9f68e9e7734c5cf5b584e75b789bbeee668"},
+]
 loguru = [
     {file = "loguru-0.6.0-py3-none-any.whl", hash = "sha256:4e2414d534a2ab57573365b3e6d0234dfb1d84b68b7f3b948e6fb743860a77c3"},
     {file = "loguru-0.6.0.tar.gz", hash = "sha256:066bd06758d0a513e9836fd9c6b5a75bfb3fd36841f4b996bc60b547a309d41c"},
