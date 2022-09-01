@@ -41,16 +41,17 @@ def from_power(value: float) -> int:
 class LMS(Instrument):
     """ """
 
-    DEFAULT_PARAMETERS = {
-        "frequency": 6e9,
-        "power": 0.0,
-        "rf": False,
-    }
-
-    def __init__(self, name: str, id: int, **parameters) -> None:
+    def __init__(
+        self,
+        name: str,
+        id: int,
+        frequency: float = 6e9,
+        power: float = 0.0,
+        rf: bool = False,
+    ) -> None:
         """ """
         self._handle = None
-        super().__init__(id=id, name=name, **{**LMS.DEFAULT_PARAMETERS, **parameters})
+        super().__init__(id=id, name=name, frequency=frequency, power=power, rf=rf)
 
         DLL.fnLMS_SetTestMode(False)  # we are using actual hardware
         DLL.fnLMS_SetUseInternalRef(self._handle, False)  # use external 10MHz reference
@@ -63,7 +64,7 @@ class LMS(Instrument):
 
     @property
     def status(self) -> bool:
-        """ A connected LMS responds with an integer status code of 16395 """
+        """A connected LMS responds with an integer status code of 16395"""
         return DLL.fnLMS_GetDeviceStatus(self._handle) == 16395
 
     def connect(self) -> None:
