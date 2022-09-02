@@ -1,7 +1,7 @@
 """ """
 
 from qcore.modes.mode import Mode
-from qcore.pulses.constant_pulse import ConstantPulse
+from qcore.pulses.ramped_constant_pulse import ConstantPulse
 from qcore.pulses.gaussian_pulse import GaussianPulse
 
 class Qubit(Mode):
@@ -17,3 +17,6 @@ class Qubit(Mode):
             parameters["ops"] = default_ops
 
         super().__init__(**parameters)
+
+    def rotate(self) -> None:
+        """ """

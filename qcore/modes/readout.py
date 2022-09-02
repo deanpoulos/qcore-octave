@@ -1,8 +1,8 @@
 """ """
 
 from qcore.modes.mode import Mode
-from qcore.pulses.constant_pulse import ConstantPulse
-from qcore.pulses.readout_pulse import ReadoutPulse
+from qcore.pulses.ramped_constant_pulse import ConstantPulse
+from qcore.pulses.constant_readout_pulse import ReadoutPulse
 
 
 class Readout(Mode):
@@ -24,3 +24,6 @@ class Readout(Mode):
             parameters["ops"] = default_ops
 
         super().__init__(**parameters)
+
+    def measure(self) -> None:
+        """ """
