@@ -29,7 +29,7 @@ class Mode(Resource):
 
         self._ports: dict[str, int] = dict.fromkeys(Mode.PORTS_KEYS)
         self._mixer_offsets: dict[str, float] = dict.fromkeys(Mode.OFFSETS_KEYS, 0.0)
-        self._ops: dict[str, Pulse] = {}
+        self._ops: list[Pulse] = []
 
         super().__init__(name=name, ports=ports, **parameters)
 
@@ -78,54 +78,54 @@ class Mode(Resource):
             logger.debug(f"Set {self} mixer offsets: {value}.")
 
     @property
-    def ops(self) -> list[str | Pulse]:
+    def ops(self) -> list[Pulse]:
         """ """
         return self._ops.copy()
 
     @ops.setter
-    def ops(self, value: dict[str | Pulse]) -> None:
+    def ops(self, value: list[Pulse]) -> None:
         """ """
         try:
-            for pulse in value.values():
+            for pulse in value:
                 if not isinstance(pulse, Pulse):
                     message = f"Invalid value '{pulse}', must be of {Pulse}"
                     logger.error(message)
                     raise ValueError(message)
         except TypeError:
-            message = f"Setter expects {dict[str, Pulse]}."
+            message = f"Setter expects {list[str, Pulse]}."
             logger.error(message)
             raise ValueError(message) from None
         else:
+            if len({op.name for op in value}) != len(value):
+                message = f"All Pulses must have a unique name in '{value}'."
+                logger.error(message)
+                raise ValueError(message)
             self._ops = value
-            logger.debug(f"Set {self} ops: {value}.")
+            logger.debug(f"Set {len(value)} ops for self.")
 
-    def add_ops(self, value: dict[str | Pulse]) -> None:
+    def add_ops(self, value: list[Pulse]) -> None:
         """ """
         try:
-            for name in value.keys():
-                if name in self._ops:
-                    message = f"An op with {name = } already exists for {self}."
-                    logger.error(message)
-                    raise ValueError(message)
+            self.ops = [*self._ops, *value]
         except TypeError:
-            message = f"Setter expects {dict[str, Pulse]}."
+            message = f"Setter expects {list[Pulse]}."
             logger.error(message)
             raise ValueError(message) from None
-        else:
-            self.ops = self._ops | value
 
     def remove_ops(self, *names: str) -> None:
         """ """
+        op_dict = {op.name: op for op in self._ops}
         for name in names:
-            if name in self._ops:
-                del self._ops[name]
+            if name in op_dict:
+                self._ops.remove(op_dict[name])
                 logger.debug(f"Removed {self} op named '{name}'.")
             else:
                 logger.warning(f"Op named '{name}' does not exist for {self}")
 
-    def get_ops(self, *names: str) -> dict[str, Pulse]:
+    def get_ops(self, *names: str) -> list[Pulse]:
         """ """
-        return {name: self._ops[name] for name in names if name in self._ops}
+        op_dict = {op.name: op for op in self._ops}
+        return [op_dict[name] for name in names if name in op_dict]
 
     def play(self) -> None:
         """ """
