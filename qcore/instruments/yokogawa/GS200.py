@@ -18,14 +18,23 @@ class GS200(Instrument):
         name: str,
         id: str,
         current: float = 0.0,  # Ampere
-        output_on: bool = False,
+        output: bool = False,
     ) -> None:
         """ """
         self._handle: pyvisa.resources.Resource = None
-        super().__init__(id=id, name=name, current=current, output_on=output_on)
+        super().__init__(id=id, name=name, current=current, output=output)
 
         # assume qcrew uses GS200 as a current source, so we hard code this for now
         self._handle.write("source:function current")
+
+    def connect(self) -> None:
+        """ """
+        resource_name = f"USB::0xB21::0x39::{self.id}::INSTR"
+        self._handle = pyvisa.ResourceManager().open_resource(resource_name)
+
+    def disconnect(self) -> None:
+        """ """
+        self._handle.close()
 
     @property
     def status(self) -> bool:
@@ -36,18 +45,6 @@ class GS200(Instrument):
             return False
         else:
             return True
-
-    def connect(self) -> None:
-        """ """
-        if self.status or self._handle is not None:  # close any existing connections
-            self.disconnect()
-
-        resource_name = f"USB::0xB21::0x39::{self.id}::INSTR"
-        self._handle = pyvisa.ResourceManager().open_resource(resource_name)
-
-    def disconnect(self) -> None:
-        """ """
-        self._handle.close()
 
     @property
     def current(self) -> float:
@@ -61,12 +58,12 @@ class GS200(Instrument):
         time.sleep(GS200.WAIT_TIME)
 
     @property
-    def output_on(self) -> bool:
+    def output(self) -> bool:
         """ """
         return bool(int(self._handle.query(":output?")))
 
-    @output_on.setter
-    def output_on(self, value: bool) -> None:
+    @output.setter
+    def output(self, value: bool) -> None:
         """ """
         self._handle.write(f"output {int(bool(value))}")
         time.sleep(GS200.WAIT_TIME)
