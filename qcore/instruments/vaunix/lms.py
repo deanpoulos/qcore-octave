@@ -5,7 +5,6 @@ from pathlib import Path
 
 from labctrl import Instrument
 from labctrl.errors import ConnectionError
-from labctrl.logger import logger
 
 # DLL driver must be placed in the same folder as this file
 DLL = CDLL(str(Path(__file__).parent / "lms.dll"))
@@ -104,7 +103,6 @@ class LMS(Instrument):
         bounds = (0, 1)
         if value not in bounds:
             message = f"RF {value = } out of {bounds = }, check USB connection"
-            logger.error(message)
             raise ConnectionError(message)
         return bool(value)
 
@@ -113,7 +111,6 @@ class LMS(Instrument):
         """ """
         if not isinstance(value, bool):
             message = f"Expect boolean RF value, not {value = } of {type(value)}"
-            logger.error(message)
             raise ValueError(message)
         self._errorcheck(DLL.fnLMS_SetRFOn(self._handle, value))
 
@@ -135,7 +132,6 @@ class LMS(Instrument):
         if not in_bounds:
             bounds = f"[{self.min_frequency:.2E}, {self.max_frequency:.2E}]"
             message = f"Frequency {value = :E} out of {bounds = }, check USB connection"
-            logger.error(message)
             raise ConnectionError(message)
         return value
 
@@ -146,13 +142,11 @@ class LMS(Instrument):
             in_bounds = self.min_frequency <= value <= self.max_frequency
         except TypeError:
             message = f"Expect frequency of {float}, got {value = } of {type(value)}"
-            logger.error(message)
             raise ValueError(message)
         else:
             if not in_bounds:
                 bounds = f"[{self.min_frequency:.2E}, {self.max_frequency:.2E}]"
                 message = f"Frequency {value = :E} out of {bounds = }"
-                logger.error(message)
                 raise ValueError(message)
         self._errorcheck(DLL.fnLMS_SetFrequency(self._handle, from_frequency(value)))
 
@@ -174,7 +168,6 @@ class LMS(Instrument):
         if not in_bounds:
             bounds = f"[{self.min_power:}, {self.max_power:}]"
             message = f"Power {value = } out of {bounds = }, check USB connection"
-            logger.error(message)
             raise ConnectionError(message)
         return value
 
@@ -185,12 +178,10 @@ class LMS(Instrument):
             in_bounds = self.min_power <= value <= self.max_power
         except TypeError:
             message = f"Expect power of {float}, got {value = } of {type(value)}"
-            logger.error(message)
             raise ValueError(message)
         else:
             if not in_bounds:
                 bounds = f"[{self.min_power:}, {self.max_power:}]"
                 message = f"Power {value = } out of {bounds = }"
-                logger.error(message)
                 raise ValueError(message)
         self._errorcheck(DLL.fnLMS_SetPowerLevel(self._handle, from_power(value)))
