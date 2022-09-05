@@ -1,7 +1,7 @@
 """ """
 
 from qcore.modes.mode import Mode
-from qcore.pulses.ramped_constant_pulse import ConstantPulse
+from qcore.pulses.ramped_constant_pulse import RampedConstantPulse
 from qcore.pulses.gaussian_pulse import GaussianPulse
 
 
@@ -12,8 +12,8 @@ class Cavity(Mode):
         """ """
         if "ops" not in parameters:
             default_ops = {
-                "constant_pulse": None,
-                "gaussian_pulse": None,
+                "constant_pulse": RampedConstantPulse(),
+                "gaussian_pulse": GaussianPulse(),
             }
             parameters["ops"] = default_ops
 

@@ -2,7 +2,7 @@
 
 from qcore.modes.mode import Mode
 from qcore.pulses.ramped_constant_pulse import ConstantPulse
-from qcore.pulses.constant_readout_pulse import ReadoutPulse
+from qcore.pulses.readout_pulse import ConstantReadoutPulse
 
 
 class Readout(Mode):
@@ -19,7 +19,7 @@ class Readout(Mode):
         if "ops" not in parameters:
             default_ops = {
                 "constant_pulse": ConstantPulse(),
-                "readout_pulse": ReadoutPulse(),
+                "readout_pulse": ConstantReadoutPulse(),
             }
             parameters["ops"] = default_ops
 
