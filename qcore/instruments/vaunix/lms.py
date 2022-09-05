@@ -46,11 +46,11 @@ class LMS(Instrument):
         id: int,
         frequency: float = 6e9,
         power: float = 0.0,
-        rf: bool = False,
+        output: bool = False,
     ) -> None:
         """ """
         self._handle = None
-        super().__init__(id=id, name=name, frequency=frequency, power=power, rf=rf)
+        super().__init__(id, name=name, frequency=frequency, power=power, output=output)
 
         DLL.fnLMS_SetTestMode(False)  # we are using actual hardware
         DLL.fnLMS_SetUseInternalRef(self._handle, False)  # use external 10MHz reference
@@ -87,30 +87,30 @@ class LMS(Instrument):
 
     def disconnect(self):
         """ """
-        self.rf = False
+        self.output = False
         self._errorcheck(DLL.fnLMS_CloseDevice(self._handle))
         self._handle = None
 
     @property
-    def pll(self) -> bool:
+    def clocked(self) -> bool:
         """The hex code for PLL_LOCKED flag is 0x00000040 in vnx_LMS_api.h"""
         return bool(int(hex(DLL.fnLMS_GetDeviceStatus(self._handle))[-2]))
 
     @property
-    def rf(self) -> bool:
+    def output(self) -> bool:
         """ """
         value = DLL.fnLMS_GetRF_On(self._handle)
         bounds = (0, 1)
         if value not in bounds:
-            message = f"RF {value = } out of {bounds = }, check USB connection"
+            message = f"Output {value = } out of {bounds = }, check USB connection"
             raise ConnectionError(message)
         return bool(value)
 
-    @rf.setter
-    def rf(self, value: bool) -> None:
+    @output.setter
+    def output(self, value: bool) -> None:
         """ """
         if not isinstance(value, bool):
-            message = f"Expect boolean RF value, not {value = } of {type(value)}"
+            message = f"Expect boolean output value, not {value = } of {type(value)}"
             raise ValueError(message)
         self._errorcheck(DLL.fnLMS_SetRFOn(self._handle, value))
 
