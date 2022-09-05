@@ -4,7 +4,6 @@ from pathlib import Path
 
 from labctrl import Resource
 from labctrl.logger import logger
-import labctrl.yamlizer as yml
 
 from qcore.pulses.pulse import Pulse
 
@@ -45,11 +44,9 @@ class Mode(Resource):
             for key in value.keys():
                 if key not in Mode.PORTS_KEYS:
                     message = f"Invalid port {key = }, valid keys: {Mode.PORTS_KEYS}."
-                    logger.error(message)
                     raise KeyError(message)
         except (AttributeError, TypeError):
             message = f"Expect {dict[str, int]} with keys: {Mode.PORTS_KEYS}."
-            logger.error(message)
             raise ValueError(message) from None
         else:
             self._ports = value
@@ -67,11 +64,9 @@ class Mode(Resource):
             for key in value.keys():
                 if key not in Mode.MIXER_OFFSETS_KEYS:
                     msg = f"Invalid {key = }, valid offset keys: {Mode.OFFSETS_KEYS}."
-                    logger.error(msg)
                     raise KeyError(msg)
         except (AttributeError, TypeError):
             message = f"Expect {dict[str, float]} with keys: {Mode.OFFSETS_KEYS}."
-            logger.error(message)
             raise ValueError(message) from None
         else:
             self._mixer_offsets = value
@@ -88,29 +83,22 @@ class Mode(Resource):
         try:
             for pulse in value:
                 if not isinstance(pulse, Pulse):
-                    message = f"Invalid value '{pulse}', must be of {Pulse}"
-                    logger.error(message)
-                    raise ValueError(message)
+                    raise ValueError(f"Invalid value '{pulse}', must be of {Pulse}")
         except TypeError:
-            message = f"Setter expects {list[str, Pulse]}."
-            logger.error(message)
-            raise ValueError(message) from None
+            raise ValueError(f"Setter expects {list[str, Pulse]}.") from None
         else:
-            if len({op.name for op in value}) != len(value):
-                message = f"All Pulses must have a unique name in '{value}'."
-                logger.error(message)
-                raise ValueError(message)
+            op_names = {op.name for op in value}
+            if len(op_names) != len(value):
+                raise ValueError(f"All Pulses must have a unique name in '{value}'.")
             self._ops = value
-            logger.debug(f"Set {len(value)} ops for self.")
+            logger.debug(f"Set {self} ops: {op_names}.")
 
     def add_ops(self, value: list[Pulse]) -> None:
         """ """
         try:
             self.ops = [*self._ops, *value]
         except TypeError:
-            message = f"Setter expects {list[Pulse]}."
-            logger.error(message)
-            raise ValueError(message) from None
+            raise ValueError(f"Setter expects {list[Pulse]}.") from None
 
     def remove_ops(self, *names: str) -> None:
         """ """
