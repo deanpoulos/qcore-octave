@@ -58,7 +58,8 @@ class LMS(Instrument):
     def _errorcheck(self, errorcode: int) -> None:
         """Only if we get bad values during setting params"""
         if errorcode:  # non-zero return values indicate error
-            message = f"Got {errorcode = } from {self}, check USB connection"
+            message = f"Got {errorcode = } from {self}, reconnect device."
+            self._handle = None
             raise ConnectionError(message)
 
     @property
@@ -87,7 +88,6 @@ class LMS(Instrument):
 
     def disconnect(self):
         """ """
-        self.output = False
         self._errorcheck(DLL.fnLMS_CloseDevice(self._handle))
         self._handle = None
 
@@ -146,8 +146,7 @@ class LMS(Instrument):
         else:
             if not in_bounds:
                 bounds = f"[{self.min_frequency:.2E}, {self.max_frequency:.2E}]"
-                message = f"Frequency {value = :E} out of {bounds = }"
-                raise ValueError(message)
+                raise ValueError(f"Frequency {value = :E} out of {bounds = }")
         self._errorcheck(DLL.fnLMS_SetFrequency(self._handle, from_frequency(value)))
 
     @property
@@ -182,6 +181,5 @@ class LMS(Instrument):
         else:
             if not in_bounds:
                 bounds = f"[{self.min_power:}, {self.max_power:}]"
-                message = f"Power {value = } out of {bounds = }"
-                raise ValueError(message)
+                raise ValueError(f"Power {value = } out of {bounds = }")
         self._errorcheck(DLL.fnLMS_SetPowerLevel(self._handle, from_power(value)))
