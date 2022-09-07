@@ -84,13 +84,21 @@ class SA124(Instrument):
     ) -> None:
         """ """
         self._handle = None
+        self._status = False  # set by connect() and _errorcheck()
+        self._is_sweep_configured: bool = False  # to set sweep parameters on device
+        self._freqs: list[float] = None  # to save sweep frequencies for quick access
 
+        # these sweep parameters are set by the user to configure sweeps
         self._center: float = center
         self._span: float = span
         self._rbw: float = rbw
         self._power: float = power
-        self._freqs: list[float] = None  # to save sweep frequencies for quick access
-        self._is_sweep_configured: bool = False  # to set sweep parameters on device
+
+        # these parameters are queried from the device after a sweep has been requested
+        # they are set to None when the center, span, or rbw changes prior to a sweep
+        self._sweep_length: int | None = None
+        self._start_frequency: float | None = None
+        self._bin_size: float | None = None
 
         super().__init__(id, name=name, center=center, span=span, rbw=rbw, power=power)
 
@@ -103,37 +111,33 @@ class SA124(Instrument):
     def _errorcheck(self, errorcode: int) -> None:
         """ """
         if errorcode:  # non-zero values indicate errors
-            message = f"Got {errorcode = }, details: {SA.saGetErrorString(errorcode)}"
+            details = SA.saGetErrorString(errorcode).decode()
             if errorcode < 0:
-                self._handle = None
-                raise ConnectionError(f"Please reconnect {self}. {message}")
+                self._status = False
+                raise ConnectionError(f"Got {errorcode = }, {details = }.")
             else:
-                logger.warning(message)
+                logger.warning(f"Got {errorcode = }, {details = }.")
 
     def connect(self) -> None:
         """ """
-        if self._handle is not None:
+        if self.status:  # close any existing connections
             self.disconnect()
 
         device = c_int(-1)
         self._errorcheck(SA.saOpenDeviceBySerialNumber(byref(device), self.id))
         self._handle = device.value
+        self._status = True
+        self._configure_sweep()  # to ensure device is ready to sweep upon connection
 
     def disconnect(self) -> None:
         """ """
         self._errorcheck(SA.saCloseDevice(self._handle))
-        self._handle = None
+        self._status = False
 
     @property
     def status(self) -> bool:
         """ """
-        try:
-            serial = c_int(-1)
-            self._errorcheck(SA.saGetSerialNumber(self._handle, byref(serial)()))
-        except ConnectionError:
-            return False
-        else:
-            return True
+        return self._status
 
     def sweep(self) -> tuple[list[float], list[float]]:
         """ """
@@ -146,10 +150,11 @@ class SA124(Instrument):
         return self._freqs, sweep_max.tolist()
 
     def single_sweep(
-        self, center: float, averages: int = 1, configure: bool = False
+        self, center: float = None, averages: int = 1, configure: bool = False
     ) -> float:
         """ """
         if configure:
+            center = self.center if center is None else center
             self.configure(center=center, rbw=250e3, span=250e3)
 
         ys = []
@@ -174,12 +179,30 @@ class SA124(Instrument):
         # set SA124 to sweep mode, we are now ready to sweep
         self._errorcheck(SA.saInitiate(self._handle, SA124.SWEEPING, 0))
 
-        sweep_length, start_freq, bin_size = c_int(-1), c_double(-1), c_double(-1)
-        args = (byref(arg) for arg in (sweep_length, start_freq, bin_size))
+        # get sweep information
+        sweep_length, start_frequency, bin_size = c_int(-1), c_double(-1), c_double(-1)
+        args = (byref(arg) for arg in (sweep_length, start_frequency, bin_size))
         self._errorcheck(SA.saQuerySweepInfo(handle, *args))
-        self._freqs = [start_freq + i * bin_size for i in range(sweep_length)]
-
+        self._sweep_length = sweep_length = sweep_length.value
+        self._start_frequency = start_frequency = start_frequency.value
+        self._bin_size = bin_size = bin_size.value
+        self._freqs = [start_frequency + i * bin_size for i in range(sweep_length)]
         self._is_sweep_configured = True
+
+    @property
+    def sweep_length(self) -> int:
+        """ """
+        return self._sweep_length
+
+    @property
+    def start_frequency(self) -> float:
+        """ """
+        return self._start_frequency
+
+    @property
+    def bin_size(self) -> float:
+        """ """
+        return self._bin_size
 
     @property
     def center(self) -> float:
@@ -200,6 +223,7 @@ class SA124(Instrument):
                 raise ValueError(f"Center {value = :E} out of {bounds = }")
             self._center = value
             self._is_sweep_configured = False
+            self._start_frequency, self._sweep_length, self._bin_size = None, None, None
 
     @property
     def span(self) -> float:
@@ -209,7 +233,7 @@ class SA124(Instrument):
     @span.setter
     def span(self, value: float) -> None:
         """ """
-        max_freq, min_freq = self.center + value, self.center - value
+        max_freq, min_freq = self._center + value, self._center - value
         try:
             out_of_bounds = max_freq > SA124.MAX_CENTER or min_freq < SA124.MIN_CENTER
         except TypeError:
@@ -219,9 +243,9 @@ class SA124(Instrument):
             if out_of_bounds:
                 bounds = f"[{SA124.MIN_CENTER:.2E}, {SA124.MAX_CENTER:.2E}]"
                 raise ValueError(f"Sweep range out of {bounds = } for span = {value}.")
-            else:
-                self._span = value if value >= SA124.MIN_SPAN else SA124.MIN_SPAN
-                self._is_sweep_configured = False
+            self._span = value if value >= SA124.MIN_SPAN else SA124.MIN_SPAN
+            self._is_sweep_configured = False
+            self._start_frequency, self._sweep_length, self._bin_size = None, None, None
 
     @property
     def rbw(self) -> float:
@@ -231,7 +255,7 @@ class SA124(Instrument):
     @rbw.setter
     def rbw(self, value: float) -> None:
         """ """
-        start, span = self.center - (self.span / 2), self.span
+        start, span = self._center - (self._span / 2), self._span
         is_valid = False  # conditions are obtained from the SA124 API manual
         try:
             if (value == 6e6 and start >= 2e8 and span >= 2e8) or value == 250e3:
@@ -251,6 +275,7 @@ class SA124(Instrument):
             else:
                 self._rbw = value
             self._is_sweep_configured = False
+            self._start_frequency, self._sweep_length, self._bin_size = None, None, None
 
     @property
     def power(self) -> float:
@@ -267,3 +292,6 @@ class SA124(Instrument):
             raise ValueError(message)
         else:
             self._is_sweep_configured = False
+
+
+# from qcore.instruments.signalhound import SA124
