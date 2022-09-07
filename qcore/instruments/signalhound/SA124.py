@@ -292,6 +292,3 @@ class SA124(Instrument):
             raise ValueError(message)
         else:
             self._is_sweep_configured = False
-
-
-# from qcore.instruments.signalhound import SA124

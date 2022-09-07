@@ -2,8 +2,6 @@
 
 from labctrl import Instrument
 import pyvisa
-import pyvisa.errors as pverrs
-
 
 class MS46522B(Instrument):
     """ """
@@ -33,8 +31,8 @@ class MS46522B(Instrument):
         self._handle = None
         super().__init__(id=id, name=name, **parameters)
 
-        self._traces: tuple[tuple[str, str]] = None
-        self.traces = (("s21", "real"), ("s21", "imag"))
+        self._traces: list[tuple[str, str]] = None
+        self.traces = [("s21", "real"), ("s21", "imag")]
         self._handle.timeout = None  # better to have no timeout for very long sweeps
         self._handle.write(":sense:average:type sweepbysweep")  # enforce default
         self._handle.write(":sweep:type linear")  # for now, only support linear sweeps
@@ -45,9 +43,8 @@ class MS46522B(Instrument):
 
     def connect(self) -> None:
         """ """
-        if self.status or self._handle is not None:  # close any existing connections
+        if self._handle is not None:
             self.disconnect()
-
         resource_name = f"TCPIP0::{self.id}::INSTR"
         self._handle = pyvisa.ResourceManager().open_resource(resource_name)
 
@@ -60,7 +57,7 @@ class MS46522B(Instrument):
         """ """
         try:
             self._handle.query("*IDN?")
-        except (pverrs.VisaIOError, pverrs.InvalidSession):
+        except (pyvisa.errors.VisaIOError, pyvisa.errors.InvalidSession):
             return False
         else:
             return True
@@ -191,17 +188,17 @@ class MS46522B(Instrument):
             self._handle.write(f":source:power:port2 {port2_power}")
 
     @property
-    def traces(self) -> tuple[tuple[str, str]]:
+    def traces(self) -> list[tuple[str, str]]:
         """ """
         return self._traces.copy()
 
     @traces.setter
-    def traces(self, value: tuple[tuple[str, str]]) -> None:
+    def traces(self, value: list[tuple[str, str]]) -> None:
         """ """
         try:
             num_traces = len(value)
         except (TypeError, ValueError):
-            raise ValueError("Traces setter expects tuple[tuple[str, str]]") from None
+            raise ValueError("Traces setter expects list[tuple[str, str]]") from None
         else:
             min, max = MS46522B.MIN_TRACES, MS46522B.MAX_TRACES
             self._check_bounds(num_traces, min, max, "Number of traces")

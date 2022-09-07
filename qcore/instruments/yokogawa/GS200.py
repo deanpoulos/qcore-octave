@@ -29,6 +29,8 @@ class GS200(Instrument):
 
     def connect(self) -> None:
         """ """
+        if self._handle is not None:
+            self.disconnect()
         resource_name = f"USB::0xB21::0x39::{self.id}::INSTR"
         self._handle = pyvisa.ResourceManager().open_resource(resource_name)
 
