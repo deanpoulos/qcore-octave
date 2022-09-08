@@ -3,6 +3,7 @@
 from labctrl import Instrument
 import pyvisa
 
+
 class MS46522B(Instrument):
     """ """
 
@@ -26,7 +27,7 @@ class MS46522B(Instrument):
         **dict.fromkeys([13, 14, 15, 16], "R4C4"),
     }
 
-    def __init__(self, name: str, id: str, **parameters) -> None:
+    def __init__(self, id: str, name: str = "VNA", **parameters) -> None:
         """ """
         self._handle = None
         super().__init__(id=id, name=name, **parameters)
