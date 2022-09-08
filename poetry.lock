@@ -33,18 +33,18 @@ pytz = ">=2015.7"
 
 [[package]]
 name = "betterproto"
-version = "1.2.5"
+version = "2.0.0b5"
 description = "A better Protobuf / gRPC generator & library"
 category = "main"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.6.2,<4.0"
 
 [package.dependencies]
-grpclib = "*"
-stringcase = "*"
+grpclib = ">=0.4.1,<0.5.0"
+python-dateutil = ">=2.8,<3.0"
 
 [package.extras]
-compiler = ["black", "jinja2", "protobuf"]
+compiler = ["black (>=19.3b0)", "isort (>=5.10.1,<6.0.0)", "jinja2 (>=3.0.3)"]
 
 [[package]]
 name = "black"
@@ -599,32 +599,24 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "qm-qua"
-version = "0.3.8"
+version = "1.0.0"
 description = "QUA language SDK to control a Quantum Computer"
 category = "main"
 optional = false
 python-versions = ">=3.7,<4.0"
 
 [package.dependencies]
-betterproto = ">=1.2.5,<2.0.0"
+betterproto = "2.0.0b5"
 grpcio = ">=1.39.0,<2.0.0"
+grpclib = {version = ">=0.4.3rc3,<0.5.0", markers = "python_version >= \"3.10\" and python_version < \"4.0\""}
 marshmallow = ">=3.0.0,<4.0.0"
 marshmallow-polyfield = ">=5.7,<6.0"
 numpy = ">=1.17.0,<2.0.0"
 protobuf = ">=3.17.3,<4.0.0"
-qua = ">=0.1.0,<0.2.0"
+tinydb = ">=4.6.1,<5.0.0"
 
-[[package]]
-name = "qua"
-version = "0.1.0"
-description = "SDK to interact with a quantum computer at the pulse level"
-category = "main"
-optional = false
-python-versions = ">=3.7,<4.0"
-
-[package.dependencies]
-betterproto = ">=1.2.5,<2.0.0"
-grpclib = ">=0.4.2,<0.5.0"
+[package.extras]
+simulation = ["certifi"]
 
 [[package]]
 name = "requests"
@@ -795,12 +787,12 @@ lint = ["docutils-stubs", "flake8", "mypy"]
 test = ["pytest"]
 
 [[package]]
-name = "stringcase"
-version = "1.2.0"
-description = "String case converter."
+name = "tinydb"
+version = "4.7.0"
+description = "TinyDB is a tiny, document oriented database optimized for your happiness :)"
 category = "main"
 optional = false
-python-versions = "*"
+python-versions = ">=3.6,<4.0"
 
 [[package]]
 name = "tomli"
@@ -845,7 +837,7 @@ dev = ["black (>=19.3b0)", "pytest (>=4.6.2)"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.10,<3.11"
-content-hash = "2e635ab7c47872ec26b4eef965c0edf238e89c30547c13af89a35735c01cb69d"
+content-hash = "bd5ccda9b9cd98a78c33b66eae53d3b2efa0e4bf84823de142ebb1c10f585145"
 
 [metadata.files]
 alabaster = [
@@ -861,7 +853,8 @@ babel = [
     {file = "Babel-2.10.3.tar.gz", hash = "sha256:7614553711ee97490f732126dc077f8d0ae084ebc6a96e23db1482afabdb2c51"},
 ]
 betterproto = [
-    {file = "betterproto-1.2.5.tar.gz", hash = "sha256:74a3ab34646054f674d236d1229ba8182dc2eae86feb249b8590ef496ce9803d"},
+    {file = "betterproto-2.0.0b5-py3-none-any.whl", hash = "sha256:d3e6115c7d5136f1d5974e565b7560273f66b43065e74218e472321ee1258f4c"},
+    {file = "betterproto-2.0.0b5.tar.gz", hash = "sha256:00a301c70a2db4d3cdd2b261522ae1d34972fb04b655a154d67daaaf4131102e"},
 ]
 black = [
     {file = "black-22.8.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:ce957f1d6b78a8a231b18e0dd2d94a33d2ba738cd88a7fe64f53f659eea49fdd"},
@@ -1470,12 +1463,8 @@ pyyaml = [
     {file = "PyYAML-6.0.tar.gz", hash = "sha256:68fb519c14306fec9720a2a5b45bc9f0c8d1b9c72adf45c37baedfcd949c35a2"},
 ]
 qm-qua = [
-    {file = "qm-qua-0.3.8.tar.gz", hash = "sha256:47cfd78223dd2c5aaf1ea46df877b4f6153fc28ab104d1cb9f29753532f98857"},
-    {file = "qm_qua-0.3.8-py3-none-any.whl", hash = "sha256:48ef20d90507d7073164d1beeed8ed7f2ed1d9ff7e6bf7cde12974ddc6f8b063"},
-]
-qua = [
-    {file = "qua-0.1.0-py3-none-any.whl", hash = "sha256:d83539186b59e86985c4d9bbcf18c0bc60e0d2beefe130f940aa1dc677543e94"},
-    {file = "qua-0.1.0.tar.gz", hash = "sha256:cf32c0458a1c98510f190b996921743d0c6913d68af4f5f4d54c98790aa71bf9"},
+    {file = "qm-qua-1.0.0.tar.gz", hash = "sha256:4009956fd9fa1641eb553fff14fb4e4fc8c7a9f1c431553b5bc1d15630b40be0"},
+    {file = "qm_qua-1.0.0-py3-none-any.whl", hash = "sha256:64bff08ff32fb61a9f155122c85da39e321c04174e1001f6a1a729bd87fb4328"},
 ]
 requests = [
     {file = "requests-2.28.1-py3-none-any.whl", hash = "sha256:8fefa2a1a1365bf5520aac41836fbee479da67864514bdb821f31ce07ce65349"},
@@ -1530,8 +1519,9 @@ sphinxcontrib-serializinghtml = [
     {file = "sphinxcontrib-serializinghtml-1.1.5.tar.gz", hash = "sha256:aa5f6de5dfdf809ef505c4895e51ef5c9eac17d0f287933eb49ec495280b6952"},
     {file = "sphinxcontrib_serializinghtml-1.1.5-py2.py3-none-any.whl", hash = "sha256:352a9a00ae864471d3a7ead8d7d79f5fc0b57e8b3f95e9867eb9eb28999b92fd"},
 ]
-stringcase = [
-    {file = "stringcase-1.2.0.tar.gz", hash = "sha256:48a06980661908efe8d9d34eab2b6c13aefa2163b3ced26972902e3bdfd87008"},
+tinydb = [
+    {file = "tinydb-4.7.0-py3-none-any.whl", hash = "sha256:e2cdf6e2dad49813e9b5fceb3c7943387309a8738125fbff0b58d248a033f7a9"},
+    {file = "tinydb-4.7.0.tar.gz", hash = "sha256:357eb7383dee6915f17b00596ec6dd2a890f3117bf52be28a4c516aeee581100"},
 ]
 tomli = [
     {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
