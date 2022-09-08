@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 
 from qcore.pulses.constant_pulse import ConstantPulse
+from qcore.pulses.digital_waveform import DigitalWaveform
 from qcore.pulses.pulse import Pulse
 
 
@@ -23,7 +24,7 @@ class ReadoutPulse(Pulse):
         # for optimized Weights, specify path string to npz file
         self.weights: tuple[float, float, float, float] | str = weights
         self.threshold: float | None = threshold
-        super().__init__(name, **parameters)
+        super().__init__(name, digital_markers=[DigitalWaveform("ADC")], **parameters)
 
     @property
     def has_optimized_weights(self) -> bool:
