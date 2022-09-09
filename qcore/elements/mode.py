@@ -55,6 +55,10 @@ class Mode(Resource):
             self._ports = value
             logger.debug(f"Set {self} ports: {value}.")
 
+    def has_mix_inputs(self) -> bool:
+        """ """
+        return self._ports["I"] is not None and self._ports["Q"] is not None
+
     @property
     def mixer_offsets(self) -> dict[str, float]:
         """ """
