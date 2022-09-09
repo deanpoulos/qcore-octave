@@ -24,7 +24,7 @@ class ReadoutPulse(Pulse):
         # for optimized Weights, specify path string to npz file
         self.weights: tuple[float, float, float, float] | str = weights
         self.threshold: float | None = threshold
-        super().__init__(name, digital_markers=[DigitalWaveform("ADC")], **parameters)
+        super().__init__(name, digital_marker=DigitalWaveform("ADC_ON"), **parameters)
 
     @property
     def has_optimized_weights(self) -> bool:
@@ -38,14 +38,14 @@ class ReadoutPulse(Pulse):
         """ """
         if self.has_optimized_weights:
             weights = np.load(self.weights)  # assume these are the correct length
-            I_weights = {"cosine": weights["I"][0], "sine": weights["I"][1]}
-            Q_weights = {"cosine": weights["Q"][0], "sine": weights["Q"][1]}
-            return (I_weights, Q_weights)
+            cos_weights = {"cosine": weights["I"][0], "sine": weights["I"][1]}
+            sin_weights = {"cosine": weights["Q"][0], "sine": weights["Q"][1]}
         else:
-            length = self.total_length / Pulse.CLOCK_CYCLE
+            length = self.total_length
             weights = [[(self.weights[weight], length)] for weight in self.weights]
-            I_weights = {"cosine": weights[0], "sine": weights[1]}
-            Q_weights = {"cosine": weights[2], "sine": weights[3]}
+            cos_weights = {"cosine": weights[0], "sine": weights[1]}
+            sin_weights = {"cosine": weights[2], "sine": weights[3]}
+        return (cos_weights, sin_weights)
 
 
 class ConstantReadoutPulse(ConstantPulse, ReadoutPulse):

@@ -6,6 +6,7 @@ from labctrl.logger import logger
 from qcore.elements.rf_switch import RFSwitch
 from qcore.pulses.pulse import Pulse
 from qcore.pulses.digital_waveform import DigitalWaveform
+from qcore.pulses.readout_pulse import ReadoutPulse
 
 
 class Mode(Resource):
@@ -13,7 +14,7 @@ class Mode(Resource):
 
     PORTS_KEYS = ("I", "Q")
     OFFSETS_KEYS = (*PORTS_KEYS, "G", "P")
-    RF_SWITCH_DIGITAL_MARKER_NAME = "RFSWITCH ON"
+    RF_SWITCH_DIGITAL_MARKER = "RFSWITCH_ON"
 
     def __init__(
         self,
@@ -55,7 +56,7 @@ class Mode(Resource):
             self._ports = value
             logger.debug(f"Set {self} ports: {value}.")
 
-    def has_mix_inputs(self) -> bool:
+    def has_mixed_inputs(self) -> bool:
         """ """
         return self._ports["I"] is not None and self._ports["Q"] is not None
 
@@ -100,15 +101,11 @@ class Mode(Resource):
     @rf_switch_on.setter
     def rf_switch_on(self, value: bool) -> None:
         """ """
-        if value:
-            for operation in self._operations:
-                digital_marker = DigitalWaveform(Mode.RF_SWITCH_DIGITAL_MARKER_NAME)
-                operation.add_digital_markers(digital_marker)
-            self._rf_switch_on = True
-        else:
-            for operation in self._operations:
-                operation.remove_digital_markers(Mode.RF_SWITCH_DIGITAL_MARKER_NAME)
-            self._rf_switch_on = False
+        for operation in self._operations:
+            if not isinstance(operation, ReadoutPulse):
+                marker = DigitalWaveform(Mode.RF_SWITCH_DIGITAL_MARKER)
+                operation.digital_marker = marker if value else None
+        self._rf_switch_on = bool(value)
 
     @property
     def operations(self) -> list[Pulse]:
