@@ -11,6 +11,9 @@ import qcore.elements.iq_mixer as iq_mixer
 from qcore.elements.mode import Mode
 from qcore.elements.readout import Readout
 from qcore.instruments.vaunix.lms import LMS
+from qcore.pulses.digital_waveform import DigitalWaveform
+from qcore.pulses.pulse import Pulse
+from qcore.pulses.readout_pulse import ReadoutPulse
 
 
 class QMConfigBuildingError(Exception):
@@ -34,6 +37,7 @@ class QMConfig(defaultdict):
     CLOCK_CYCLE: int = 4  # ns, also defined in qcore.pulses.pulse.Pulse
     MIN_TIME_OF_FLIGHT: int = 24  # ns
     MIN_PULSE_LENGTH: int = 16  # ns
+    MAX_PULSE_LENGTH: int = 2**31 - 1  # ns
 
     def __init__(self) -> None:
         """ """
@@ -44,6 +48,13 @@ class QMConfig(defaultdict):
     def __repr__(self) -> str:
         """ """
         return repr(dict(self))
+
+    def cast(self, value: Any, cls: Any, key: str) -> Any:
+        """ """
+        try:
+            return cls(value)
+        except (TypeError, ValueError):
+            raise ValueError(f"Failed to cast {key} {value = } to {cls}, invalid type.")
 
     def check_bounds(self, value: float, min: float, max: float, key: str) -> None:
         """ """
@@ -82,12 +93,15 @@ class QMConfig(defaultdict):
         min, max = QMConfig.MIN_TIME_OF_FLIGHT, np.inf
         self.check_bounds(value, min, max, "Time of flight")
 
-    def cast(self, value: Any, cls: Any, key: str) -> Any:
+    def check_pulse_length(self, value: int, key: str) -> None:
         """ """
-        try:
-            return cls(value)
-        except (TypeError, ValueError):
-            raise ValueError(f"Failed to cast {key} {value = } to {cls}, invalid type.")
+        min, max = QMConfig.MIN_PULSE_LENGTH, QMConfig.MAX_PULSE_LENGTH
+        self.check_bounds(value, min, max, key)
+
+        clock_cycle = QMConfig.CLOCK_CYCLE
+        if value % clock_cycle != 0:
+            message = f"'{key}' length = {value} must be a multiple of {clock_cycle}"
+            raise ValueError(message)
 
     def set_ports(self, mode: Mode) -> None:
         """ """
@@ -143,7 +157,7 @@ class QMConfig(defaultdict):
         port_config = (QMConfig.CONTROLLER_NAME, number)
         if key == "out":
             element_config["outputs"][key + str(number)] = port_config
-        elif key in ("I", "Q") and mode.has_mix_inputs():
+        elif key in ("I", "Q") and mode.has_mixed_inputs():
             element_config["mixInputs"][key] = port_config
         elif key == "I":
             element_config["singleInput"]["port"] = port_config
@@ -200,8 +214,102 @@ class QMConfig(defaultdict):
         self["elements"][name]["smearing"] = smearing
         logger.debug(f"Set {name} {smearing = }.")
 
-    def set_operations(self, *modes: Mode) -> None:
+    def set_operations(self, mode: Mode) -> None:
         """ """
+        ops = mode.operations
+        for op in ops:
+            pulse_name = mode.name + "." + op.name
+            self["elements"][mode.name]["operations"][op.name] = pulse_name
+            self.set_pulse(op, pulse_name)
+
+    def set_pulse(self, pulse: Pulse, pulse_name: str) -> None:
+        """ """
+        pulse_config = self["pulses"][pulse_name]
+        pulse_type = "measurement" if isinstance(pulse, ReadoutPulse) else "control"
+        pulse_config["operation"] = pulse_type
+        self.set_pulse_length(pulse_name, pulse.total_length)
+
+        if pulse.has_mixed_waveforms():
+            waveform_I_name = pulse_name + ".waveform." + "I"
+            waveform_Q_name = pulse_name + ".waveform." + "Q"
+            pulse_config["waveforms"]["I"] = waveform_I_name
+            pulse_config["waveforms"]["Q"] = waveform_Q_name
+            self.set_waveforms(pulse, waveform_I_name, waveform_Q_name)
+        else:
+            waveform_name = pulse_name + ".waveform"
+            pulse_config["waveforms"]["single"] = waveform_name
+            self.set_waveforms(pulse, waveform_name)
+
+        digital_marker = pulse.digital_marker
+        if digital_marker is not None:
+            marker_name = pulse_name + "." + digital_marker.name
+            pulse_config["digital_markers"] = marker_name
+            self.set_digital_waveform(digital_marker, marker_name)
+
+        if pulse_type == "measurement" and pulse.has_mixed_waveforms():
+            iw_cos_name = pulse_name + "." + "cos"
+            iw_sin_name = pulse_name + "." + "sin"
+            pulse_config["integration_weights"]["cos"] = iw_cos_name
+            pulse_config["integration_weights"]["sin"] = iw_sin_name
+            self.set_integration_weights(pulse, iw_cos_name, iw_sin_name)
+
+    def set_pulse_length(self, name: str, value: int) -> None:
+        """ """
+        length = self.cast(value, int)
+        self.check_pulse_length(value, f"Pulse '{name}' length")
+        self["pulses"][name]["length"] = length
+        logger.debug(f"Set '{name}' {length = }.")
+
+    def set_waveforms(self, pulse: Pulse, wf_i: str, wf_q: str | None = None) -> None:
+        """ """
+        i_wave, q_wave = pulse.sample()
+        wf_dict = {wf_i: i_wave, wf_q: q_wave}
+        for wf_name, wave in wf_dict.items():
+            try:
+                if wave is not None:
+                    wave_len = len(wave)
+            except TypeError:
+                wf_type = "constant"
+            else:
+                wf_type = "arbitrary"
+                pulse_len = pulse.total_length
+                if not pulse_len == wave_len:
+                    message = f"Unequal '{wf_name}' {wave_len = } and {pulse_len = }."
+                    raise ValueError(message)
+
+            self.set_waveform(wf_name, wf_type, wave)
+
+    def set_waveform(self, name: str, type: str, sample: float | list[float]) -> None:
+        """ """
+        self["waveforms"][name]["type"] = type
+        if type == "constant":
+            self.set_constant_waveform(name, sample)
+        elif type == "arbitrary":
+            self.set_arbitrary_waveform(name, sample)
+
+    def set_constant_waveform(self, name: str, sample: float) -> None:
+        """ """
+        self.check_voltage_bounds(sample, f"'{name}' voltage")
+        self["waveforms"][name]["sample"] = sample
+        logger.debug(f"Set constant waveform '{name}' with {sample = }.")
+
+    def set_constant_waveform(self, name: str, sample: float) -> None:
+        """ """
+        self.check_voltage_bounds(min(sample), f"'{name}' voltage")
+        self.check_voltage_bounds(max(sample), f"'{name}' voltage")
+        self["waveforms"][name]["samples"] = sample
+        logger.debug(f"Set arbitrary waveform '{name}' with {len(sample)} samples.")
+
+    def set_digital_waveform(self, waveform: DigitalWaveform, name: str) -> None:
+        """ """
+        self["digital_waveforms"][name]["samples"] = waveform.samples
+        logger.debug(f"Set digital waveform '{name}'.")
+
+    def set_integration_weights(self, pulse: ReadoutPulse, cos: str, sin: str) -> None:
+        """ """
+        cos_weights, sin_weights = pulse.sample_integration_weights()
+        self["integration_weights"][cos] = cos_weights
+        self["integration_weights"][sin] = sin_weights
 
 
 class QMConfigBuilder:
@@ -233,7 +341,7 @@ class QMConfigBuilder:
             config.set_ports(mode)
             config.set_intermediate_frequency(mode.name, mode.int_freq)
 
-            if mode.has_mix_inputs():
+            if mode.has_mixed_inputs():
                 if mode.name not in lo_freqs:
                     message = f"No LO frequency specified for {mode = }."
                     raise QMConfigBuildingError(message)
@@ -245,7 +353,7 @@ class QMConfigBuilder:
                 config.set_time_of_flight(mode.name, mode.tof)
                 config.set_smearing(mode.name, mode.smearing)
 
-            # SET OPERATIONS
+            config.set_operations(mode)
 
     def _check_modes(self, *modes: Mode) -> None:
         """ """
