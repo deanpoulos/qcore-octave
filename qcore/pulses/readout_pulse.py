@@ -25,7 +25,7 @@ class ReadoutPulse(Pulse):
         # for optimized Weights, specify path string to npz file
         self.weights: tuple[float, float, float, float] | str = weights
         self.threshold: float | None = threshold
-        super().__init__(name, digital_marker=DigitalWaveform("ADC_ON"), **parameters)
+        super().__init__(name=name, **parameters)
 
     @property
     def has_optimized_weights(self) -> bool:

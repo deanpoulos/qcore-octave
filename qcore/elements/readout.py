@@ -1,6 +1,7 @@
 """ """
 
 from qcore.elements.mode import Mode
+from qcore.pulses.digital_waveform import DigitalWaveform
 from qcore.pulses.ramped_constant_pulse import ConstantPulse
 from qcore.pulses.readout_pulse import ConstantReadoutPulse
 
@@ -19,7 +20,9 @@ class Readout(Mode):
         if "operations" not in parameters:
             default_operations = [
                 ConstantPulse("constant_pulse"),
-                ConstantReadoutPulse("readout_pulse"),
+                ConstantReadoutPulse(
+                    "readout_pulse", digital_marker=DigitalWaveform("ADC_ON")
+                ),
             ]
             parameters["operations"] = default_operations
 
