@@ -10,12 +10,12 @@ class Cavity(Mode):
 
     def __init__(self, **parameters) -> None:
         """ """
-        if "ops" not in parameters:
-            default_ops = {
-                "constant_pulse": RampedConstantPulse(),
-                "gaussian_pulse": GaussianPulse(),
-            }
-            parameters["ops"] = default_ops
+        if "operations" not in parameters:
+            default_operations = [
+                RampedConstantPulse("cos_ramped_constant_pulse"),
+                GaussianPulse("gaussian_pulse"),
+            ]
+            parameters["operations"] = default_operations
 
         super().__init__(**parameters)
 
