@@ -71,7 +71,7 @@ class Mode(Resource):
         """ """
         try:
             for key in value.keys():
-                if key not in Mode.MIXER_OFFSETS_KEYS:
+                if key not in Mode.OFFSETS_KEYS:
                     msg = f"Invalid {key = }, valid offset keys: {Mode.OFFSETS_KEYS}."
                     raise KeyError(msg)
         except (AttributeError, TypeError):
@@ -90,7 +90,7 @@ class Mode(Resource):
     @rf_switch.setter
     def rf_switch(self, value: RFSwitch) -> None:
         """ """
-        if not isinstance(value, RFSwitch):
+        if value is not None and not isinstance(value, RFSwitch):
             raise ValueError(f"Invalid {value = }, must be of {RFSwitch}")
         self._rf_switch = value
         logger.debug(f"Set {self} rf switch: {value}.")
@@ -109,8 +109,6 @@ class Mode(Resource):
                     marker = DigitalWaveform(Mode.RF_SWITCH_DIGITAL_MARKER)
                     operation.digital_marker = marker if value else None
             self._rf_switch_on = bool(value)
-        else:
-            logger.warning(f"No RF switch defined for {self}.")
 
     @property
     def operations(self) -> list[Pulse]:
