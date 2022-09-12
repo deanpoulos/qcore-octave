@@ -11,7 +11,7 @@ class NumericalPulse(Pulse):
     def __init__(
         self,
         path: str,
-        name: str = "numerical_pulse",
+        name: str,
         length: int | None = None,  # None when no NumericalPulse is loaded from npzfile
         I_ampx: float = 1.0,
         Q_ampx: float = 1.0,
@@ -66,4 +66,4 @@ class NumericalPulse(Pulse):
 
         i_wave = np.concatenate((i_samples, pad))
         q_wave = np.concatenate((q_samples, pad))
-        return (i_wave, q_wave)
+        return (i_wave.tolist(), q_wave.tolist())
