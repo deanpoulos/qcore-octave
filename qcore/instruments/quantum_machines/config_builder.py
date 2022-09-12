@@ -26,6 +26,7 @@ class QMConfig(defaultdict):
     Single controller
     """
 
+    CONTROLLER_NAME: str = "con1"
     MIN_OUTPUT_PORTS: int = 1
     MAX_OUTPUT_PORTS: int = 10
     MIN_INPUT_PORTS: int = 1
@@ -42,12 +43,80 @@ class QMConfig(defaultdict):
     def __init__(self) -> None:
         """ """
         super().__init__(QMConfig)
-        self["version"] = 1
-        self["controllers"] = {"con1": {"type": "opx1"}}
 
     def __repr__(self) -> str:
         """ """
         return repr(dict(self))
+
+    def set_version(self) -> None:
+        """ """
+        self["version"] = 1
+
+    def set_ports(self, mode: Mode) -> None:
+        """ """
+        self.set_controllers()
+        ports = mode.ports
+        for port_key, port_num in ports.items():
+            if port_num is not None:
+                self.set_controller_port(mode, port_key, port_num)
+                self.set_element_port(mode, port_key, port_num)
+
+    def set_intermediate_frequency(self, name: str, value: float) -> None:
+        """ """
+        int_freq = self.cast(value, int, "intermediate frequency")
+        self["elements"][name]["intermediate_frequency"] = int_freq
+        logger.debug(f"Set {name} {int_freq = }.")
+
+    def set_lo_frequency(self, name: str, value: float) -> None:
+        """ """
+        lo_freq = self.cast(value, int, "lo frequency")
+        self["elements"][name]["mixInputs"]["lo_frequency"] = lo_freq
+        logger.debug(f"Set {name} {lo_freq = }.")
+
+    def set_mixer(self, mode: Mode, int_freq: float, lo_freq: float) -> None:
+        """ """
+        ports, offsets = mode.ports, mode.mixer_offsets
+        mixer_name = f"mixer_{ports['I']}{ports['Q']}"
+
+        mixer_correction_matrix = iq_mixer.correction_matrix(offsets["G"], offsets["P"])
+        self.check_mcm_bounds(mixer_correction_matrix)
+        mixer_config = {
+            "intermediate_frequency": int(int_freq),
+            "lo_frequency": int(lo_freq),
+            "correction": mixer_correction_matrix,
+        }
+        if mixer_name in self["mixers"]:
+            self["mixers"][mixer_name].append(mixer_config)
+        else:
+            self["mixers"][mixer_name] = [mixer_config]
+
+        self["elements"][mode.name]["mixInputs"]["mixer"] = mixer_name
+        logger.debug(f"Set {mode} {mixer_config = }.")
+
+    def set_time_of_flight(self, name: str, value: int) -> None:
+        """ """
+        self.check_tof_bounds(value)
+        tof, cycle = int(value), QMConfig.CLOCK_CYCLE
+        if tof % cycle != 0:
+            tof = cycle * round(tof / cycle)
+            logger.warning(f"{name} time of flight rounded to multiple of {cycle}.")
+
+        self["elements"][name]["time_of_flight"] = tof
+        logger.debug(f"Set {name} time of flight from to {tof}.")
+
+    def set_smearing(self, name: str, value: int) -> None:
+        """ """
+        smearing = self.cast(value, int, "smearing")
+        self["elements"][name]["smearing"] = smearing
+        logger.debug(f"Set {name} {smearing = }.")
+
+    def set_operations(self, mode: Mode) -> None:
+        """ """
+        ops = mode.operations
+        for op in ops:
+            pulse_name = mode.name + "." + op.name
+            self["elements"][mode.name]["operations"][op.name] = pulse_name
+            self.set_pulse(op, pulse_name)
 
     def cast(self, value: Any, cls: Any, key: str) -> Any:
         """ """
@@ -103,13 +172,9 @@ class QMConfig(defaultdict):
             message = f"'{key}' length = {value} must be a multiple of {clock_cycle}"
             raise ValueError(message)
 
-    def set_ports(self, mode: Mode) -> None:
+    def set_controllers(self) -> None:
         """ """
-        ports = mode.ports
-        for port_key, port_num in ports.items():
-            if port_num is not None:
-                self.set_controller_port(mode, port_key, port_num)
-                self.set_element_port(mode, port_key, port_num)
+        self["controllers"][QMConfig.CONTROLLER_NAME]["type"] = "opx1"
 
     def set_controller_port(self, mode: Mode, port_key: str, port_num: int) -> None:
         """ """
@@ -125,7 +190,7 @@ class QMConfig(defaultdict):
 
         rf_switch = mode.rf_switch
         if rf_switch is not None:
-            self.set_digital_output_port(rf_switch.port, rf_switch.name)
+            self.set_digital_output_port(rf_switch.port)
 
     def set_analog_output_port(self, number: int, offset: float) -> None:
         """ """
@@ -165,63 +230,6 @@ class QMConfig(defaultdict):
             raise ValueError(f"Invalid port {key = } and {number = } for {mode}.")
         logger.debug(f"Set '{mode.name}' port {key = } and {number = }.")
 
-    def set_mixer(self, mode: Mode, int_freq: float, lo_freq: float) -> None:
-        """ """
-        ports, offsets = mode.ports, mode.mixer_offsets
-        mixer_name = f"mixer_{ports['I']}{ports['Q']}"
-
-        mixer_correction_matrix = iq_mixer.correction_matrix(offsets["G"], offsets["P"])
-        self.check_mcm_bounds(mixer_correction_matrix)
-        mixer_config = {
-            "intermediate_frequency": int(int_freq),
-            "lo_frequency": int(lo_freq),
-            "correction": mixer_correction_matrix,
-        }
-        if mixer_name in self["mixers"]:
-            self["mixers"][mixer_name].append(mixer_config)
-        else:
-            self["mixers"][mixer_name] = [mixer_config]
-
-        self["elements"][mode.name]["mixInputs"]["mixer"] = mixer_name
-        logger.debug(f"Set {mode} {mixer_config = }.")
-
-    def set_intermediate_frequency(self, name: str, value: float) -> None:
-        """ """
-        int_freq = self.cast(value, int, "intermediate frequency")
-        self["elements"][name]["intermediate_frequency"] = int_freq
-        logger.debug(f"Set {name} {int_freq = }.")
-
-    def set_lo_frequency(self, name: str, value: float) -> None:
-        """ """
-        lo_freq = self.cast(value, int, "lo frequency")
-        self["elements"][name]["mixInputs"]["lo_frequency"] = lo_freq
-        logger.debug(f"Set {name} {lo_freq = }.")
-
-    def set_time_of_flight(self, name: str, value: int) -> None:
-        """ """
-        self.check_tof_bounds(value)
-        tof, cycle = int(value), QMConfig.CLOCK_CYCLE
-        if tof % cycle != 0:
-            tof = cycle * round(tof / cycle)
-            logger.warning(f"{name} time of flight rounded to multiple of {cycle}.")
-
-        self["elements"][name]["time_of_flight"] = tof
-        logger.debug(f"Set {name} time of flight from to {tof}.")
-
-    def set_smearing(self, name: str, value: int) -> None:
-        """ """
-        smearing = self.cast(value, int, "smearing")
-        self["elements"][name]["smearing"] = smearing
-        logger.debug(f"Set {name} {smearing = }.")
-
-    def set_operations(self, mode: Mode) -> None:
-        """ """
-        ops = mode.operations
-        for op in ops:
-            pulse_name = mode.name + "." + op.name
-            self["elements"][mode.name]["operations"][op.name] = pulse_name
-            self.set_pulse(op, pulse_name)
-
     def set_pulse(self, pulse: Pulse, pulse_name: str) -> None:
         """ """
         pulse_config = self["pulses"][pulse_name]
@@ -255,7 +263,7 @@ class QMConfig(defaultdict):
 
     def set_pulse_length(self, name: str, value: int) -> None:
         """ """
-        length = self.cast(value, int)
+        length = self.cast(value, int, "pulse length")
         self.check_pulse_length(value, f"Pulse '{name}' length")
         self["pulses"][name]["length"] = length
         logger.debug(f"Set '{name}' {length = }.")
@@ -263,21 +271,21 @@ class QMConfig(defaultdict):
     def set_waveforms(self, pulse: Pulse, wf_i: str, wf_q: str | None = None) -> None:
         """ """
         i_wave, q_wave = pulse.sample()
-        wf_dict = {wf_i: i_wave, wf_q: q_wave}
-        for wf_name, wave in wf_dict.items():
-            try:
-                if wave is not None:
+        waveform_dict = {wf_i: i_wave, wf_q: q_wave}
+        for name, wave in waveform_dict.items():
+            if wave is not None:
+                try:
                     wave_len = len(wave)
-            except TypeError:
-                wf_type = "constant"
-            else:
-                wf_type = "arbitrary"
-                pulse_len = pulse.total_length
-                if not pulse_len == wave_len:
-                    message = f"Unequal '{wf_name}' {wave_len = } and {pulse_len = }."
-                    raise ValueError(message)
+                except TypeError:
+                    waveform_type = "constant"
+                else:
+                    waveform_type = "arbitrary"
+                    pulse_len = pulse.total_length
+                    if not pulse_len == wave_len:
+                        message = f"Unequal '{name}' {wave_len = } and {pulse_len = }."
+                        raise ValueError(message)
 
-            self.set_waveform(wf_name, wf_type, wave)
+            self.set_waveform(name, waveform_type, wave)
 
     def set_waveform(self, name: str, type: str, sample: float | list[float]) -> None:
         """ """
@@ -293,12 +301,12 @@ class QMConfig(defaultdict):
         self["waveforms"][name]["sample"] = sample
         logger.debug(f"Set constant waveform '{name}' with {sample = }.")
 
-    def set_constant_waveform(self, name: str, sample: float) -> None:
+    def set_arbitrary_waveform(self, name: str, samples: float) -> None:
         """ """
-        self.check_voltage_bounds(min(sample), f"'{name}' voltage")
-        self.check_voltage_bounds(max(sample), f"'{name}' voltage")
-        self["waveforms"][name]["samples"] = sample
-        logger.debug(f"Set arbitrary waveform '{name}' with {len(sample)} samples.")
+        self.check_voltage_bounds(min(samples), f"'{name}' voltage")
+        self.check_voltage_bounds(max(samples), f"'{name}' voltage")
+        self["waveforms"][name]["samples"] = samples
+        logger.debug(f"Set arbitrary waveform '{name}' with {len(samples)} samples.")
 
     def set_digital_waveform(self, waveform: DigitalWaveform, name: str) -> None:
         """ """
@@ -332,22 +340,24 @@ class QMConfigBuilder:
         else:
             self._config = QMConfig()
             self._build_config()
-            return deepcopy(self._config)
+            return self._config
 
     def _build_config(self) -> None:
         """ """
         config, modes, lo_freqs = self._config, self._modes, self._lo_frequencies
+        config.set_version()
+        config.set_controllers()
         for mode in modes:
             config.set_ports(mode)
             config.set_intermediate_frequency(mode.name, mode.int_freq)
 
             if mode.has_mixed_inputs():
-                if mode.name not in lo_freqs:
+                if mode.lo_name not in lo_freqs:
                     message = f"No LO frequency specified for {mode = }."
                     raise QMConfigBuildingError(message)
-                config.set_lo_frequency(mode.name, lo_freqs[mode.name])
-
-                config.set_mixer(mode, mode.int_freq, lo_freqs[mode.name])
+                lo_freq = lo_freqs[mode.lo_name]
+                config.set_lo_frequency(mode.name, lo_freq)
+                config.set_mixer(mode, mode.int_freq, lo_freq)
 
             if isinstance(mode, Readout):
                 config.set_time_of_flight(mode.name, mode.tof)
