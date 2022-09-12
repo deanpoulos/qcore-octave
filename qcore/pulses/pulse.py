@@ -20,6 +20,7 @@ class Pulse(Resource):
         Q_ampx: None | float,  # set None for single waveform pulses
         pad: int,
         digital_marker: DigitalWaveform | None = None,
+        **parameters,
     ) -> None:
         """ """
         self.length: int = length
@@ -30,7 +31,7 @@ class Pulse(Resource):
 
         self._digital_marker = digital_marker
 
-        super().__init__(name=name)
+        super().__init__(name=name, **parameters)
 
     @property
     def total_length(self) -> int:

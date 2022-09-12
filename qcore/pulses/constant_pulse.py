@@ -15,9 +15,17 @@ class ConstantPulse(Pulse):
         I_ampx: float = 1.0,
         Q_ampx: None | float = 0.0,
         pad: int = 0,
+        **parameters,
     ) -> None:
         """ """
-        super().__init__(name, length=length, I_ampx=I_ampx, Q_ampx=Q_ampx, pad=pad)
+        super().__init__(
+            name=name,
+            length=length,
+            I_ampx=I_ampx,
+            Q_ampx=Q_ampx,
+            pad=pad,
+            **parameters,
+        )
 
     @property
     def total_I_amp(self) -> float:

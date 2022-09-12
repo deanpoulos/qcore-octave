@@ -16,11 +16,14 @@ class GaussianPulse(Pulse):
         I_ampx: float = 1.0,
         Q_ampx: float = 0.0,  # this is the 'drag' parameter
         pad: int = 0,
+        **parameters,
     ) -> None:
         """ """
         self.sigma: float = sigma
         self.chop: int = chop
-        super().__init__(name, length=None, I_ampx=I_ampx, Q_ampx=Q_ampx, pad=pad)
+        super().__init__(
+            name=name, length=None, I_ampx=I_ampx, Q_ampx=Q_ampx, pad=pad, **parameters
+        )
         del self.length  # not needed once total_length is overriden below
 
     @property

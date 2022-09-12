@@ -16,9 +16,17 @@ class NumericalPulse(Pulse):
         I_ampx: float = 1.0,
         Q_ampx: float = 1.0,
         pad: int | None = None,
+        **parameters,
     ) -> None:
         """ """
-        super().__init__(name, length, I_ampx=I_ampx, Q_ampx=Q_ampx, pad=pad)
+        super().__init__(
+            name=name,
+            length=length,
+            I_ampx=I_ampx,
+            Q_ampx=Q_ampx,
+            pad=pad,
+            **parameters,
+        )
 
         self._path, self._pulse = None, None
         self._length, self._pad = None, None
