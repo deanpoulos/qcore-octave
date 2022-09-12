@@ -10,7 +10,7 @@ class ConstantPulse(Pulse):
 
     def __init__(
         self,
-        name: str = "constant_pulse",
+        name: str,
         length: int = 1000,  # in ns
         I_ampx: float = 1.0,
         Q_ampx: None | float = 0.0,
@@ -37,12 +37,9 @@ class ConstantPulse(Pulse):
         total_amp = self.total_I_amp
         return (total_amp, 0.0) if self.has_mixed_waveforms() else (total_amp, None)
 
-    def _sample_arbitrary_waveform(self) -> tuple[list, list | None]:
+    def _sample_arbitrary_waveform(self) -> tuple[list, float | None]:
         """ """
         samples = np.ones(self.length)
         pad = np.zeros(self.pad) if self.pad else []
-
-        i_wave = np.concatenate((samples, pad)) * self.total_I_amp
-        q_wave = np.zeros(self.total_length)
-
-        return (i_wave, q_wave) if self.has_mixed_waveforms() else (i_wave, None)
+        i_wave = (np.concatenate((samples, pad)) * self.total_I_amp).tolist()
+        return (i_wave, 0.0) if self.has_mixed_waveforms() else (i_wave, None)

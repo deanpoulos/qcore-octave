@@ -13,7 +13,7 @@ class RampedConstantPulse(ConstantPulse):
 
     def __init__(
         self,
-        name: str = "ramped_constant_pulse",
+        name: str,
         ramp: int = 0,
         rampfn: str = "cos",
         **parameters,
@@ -38,12 +38,10 @@ class RampedConstantPulse(ConstantPulse):
 
     def _sample_arbitrary_waveform(self) -> tuple[list, list | None]:
         rampfn = RAMP_MAP[self.rampfn] if self.rampfn is not None else False
-        ramp_up = rampfn(self.ramp, up=True) if rampfn else []
+        up = rampfn(self.ramp, up=True) if rampfn else []
         samples = np.ones(self.length)
-        ramp_down = rampfn(self.ramp, up=False) if rampfn else []
+        down = rampfn(self.ramp, up=False) if rampfn else []
         pad = np.zeros(self.pad) if self.pad else []
+        i_wave = (np.concatenate((up, samples, down, pad)) * self.total_I_amp).tolist()
 
-        i_wave = np.concatenate((ramp_up, samples, ramp_down, pad)) * self.total_I_amp
-        q_wave = np.zeros(self.total_length)
-
-        return i_wave, q_wave if self.has_mixed_waveforms() else i_wave, None
+        return (i_wave, 0.0) if self.has_mixed_waveforms() else (i_wave, None)
