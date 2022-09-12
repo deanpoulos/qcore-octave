@@ -52,7 +52,8 @@ class Mode(Resource):
         except (AttributeError, TypeError):
             message = f"Expect {dict[str, int]} with keys: {Mode.PORTS_KEYS}."
             raise ValueError(message) from None
-        else:
+
+        if value:
             self._ports = value
             logger.debug(f"Set {self} ports: {value}.")
 
@@ -76,7 +77,8 @@ class Mode(Resource):
         except (AttributeError, TypeError):
             message = f"Expect {dict[str, float]} with keys: {Mode.OFFSETS_KEYS}."
             raise ValueError(message) from None
-        else:
+
+        if value:
             self._mixer_offsets = value
             logger.debug(f"Set {self} mixer offsets: {value}.")
 
@@ -101,11 +103,14 @@ class Mode(Resource):
     @rf_switch_on.setter
     def rf_switch_on(self, value: bool) -> None:
         """ """
-        for operation in self._operations:
-            if not isinstance(operation, ReadoutPulse):
-                marker = DigitalWaveform(Mode.RF_SWITCH_DIGITAL_MARKER)
-                operation.digital_marker = marker if value else None
-        self._rf_switch_on = bool(value)
+        if self._rf_switch is not None:
+            for operation in self._operations:
+                if not isinstance(operation, ReadoutPulse):
+                    marker = DigitalWaveform(Mode.RF_SWITCH_DIGITAL_MARKER)
+                    operation.digital_marker = marker if value else None
+            self._rf_switch_on = bool(value)
+        else:
+            logger.warning(f"No RF switch defined for {self}.")
 
     @property
     def operations(self) -> list[Pulse]:
@@ -121,10 +126,12 @@ class Mode(Resource):
                     raise ValueError(f"Invalid value '{pulse}', must be of {Pulse}")
         except TypeError:
             raise ValueError(f"Setter expects {list[Pulse]}.") from None
-        else:
-            operation_names = {operation.name for operation in value}
-            if len(operation_names) != len(value):
-                raise ValueError(f"All Pulses must have a unique name in '{value}'.")
+
+        operation_names = {operation.name for operation in value}
+        if len(operation_names) != len(value):
+            raise ValueError(f"All Pulses must have a unique name in '{value}'.")
+
+        if value:
             self._operations = value
             logger.debug(f"Set {self} ops: {operation_names}.")
 
