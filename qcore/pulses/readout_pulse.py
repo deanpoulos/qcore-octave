@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 
 from qcore.pulses.constant_pulse import ConstantPulse
+from qcore.pulses.gaussian_pulse import GaussianPulse
 from qcore.pulses.digital_waveform import DigitalWaveform
 from qcore.pulses.pulse import Pulse
 
@@ -14,7 +15,7 @@ class ReadoutPulse(Pulse):
 
     def __init__(
         self,
-        name: str = "readout_pulse",
+        name: str,
         weights: tuple[float, float, float, float] | str = (1.0, 0.0, 0.0, 1.0),
         threshold: float | None = None,  # not None only for Optimized weights
         **parameters,
@@ -41,8 +42,7 @@ class ReadoutPulse(Pulse):
             cos_weights = {"cosine": weights["I"][0], "sine": weights["I"][1]}
             sin_weights = {"cosine": weights["Q"][0], "sine": weights["Q"][1]}
         else:
-            length = self.total_length
-            weights = [[(self.weights[weight], length)] for weight in self.weights]
+            weights = [[(weight, self.total_length)] for weight in self.weights]
             cos_weights = {"cosine": weights[0], "sine": weights[1]}
             sin_weights = {"cosine": weights[2], "sine": weights[3]}
         return (cos_weights, sin_weights)
@@ -51,6 +51,6 @@ class ReadoutPulse(Pulse):
 class ConstantReadoutPulse(ConstantPulse, ReadoutPulse):
     """ """
 
-    def __init__(self, name: str = "constant_readout_pulse", **parameters) -> None:
-        """ """
-        super().__init__(name, **parameters)
+
+class GaussianReadoutPulse(GaussianPulse, ReadoutPulse):
+    """ """
