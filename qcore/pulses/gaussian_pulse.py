@@ -10,7 +10,7 @@ class GaussianPulse(Pulse):
 
     def __init__(
         self,
-        name: str = "gaussian_pulse",
+        name: str,
         sigma: float = 10,
         chop: int = 6,
         I_ampx: float = 1.0,
@@ -36,11 +36,12 @@ class GaussianPulse(Pulse):
     def sample(self) -> tuple[list, list | float | None]:
         """ """
         start, stop = -self.chop / 2 * self.sigma, self.chop / 2 * self.sigma
-        ts = np.linspace(start, stop, self.length)
+        length = int(self.sigma * self.chop)
+        ts = np.linspace(start, stop, length)
         pad = np.zeros(self.pad) if self.pad else []
 
         i_samples = np.exp(-(ts**2) / (2.0 * self.sigma**2)) * self.total_I_ampx
-        i_wave = np.concatenate((i_samples, pad))
+        i_wave = (np.concatenate((i_samples, pad))).tolist()
 
         if self.Q_ampx is None:
             return (i_wave, None)
@@ -48,5 +49,5 @@ class GaussianPulse(Pulse):
             return (i_wave, self.Q_ampx)
         else:
             q_samples = (np.exp(0.5) / self.sigma) * -ts * i_samples * self.Q_ampx
-            q_wave = np.concatenate((q_samples, pad))
+            q_wave = (np.concatenate((q_samples, pad))).tolist()
             return (i_wave, q_wave)
