@@ -268,7 +268,7 @@ class QMConfig(defaultdict):
         self["pulses"][name]["length"] = length
         logger.debug(f"Set '{name}' {length = }.")
 
-    def set_waveforms(self, pulse: Pulse, wf_i: str, wf_q: str | None = None) -> None:
+    def set_waveforms(self, pulse: Pulse, wf_i: str, wf_q: str = None) -> None:
         """ """
         i_wave, q_wave = pulse.sample()
         waveform_dict = {wf_i: i_wave, wf_q: q_wave}
@@ -287,7 +287,7 @@ class QMConfig(defaultdict):
 
             self.set_waveform(name, waveform_type, wave)
 
-    def set_waveform(self, name: str, type: str, sample: float | list[float]) -> None:
+    def set_waveform(self, name: str, type: str, sample) -> None:
         """ """
         self["waveforms"][name]["type"] = type
         if type == "constant":
@@ -301,7 +301,7 @@ class QMConfig(defaultdict):
         self["waveforms"][name]["sample"] = sample
         logger.debug(f"Set constant waveform '{name}' with {sample = }.")
 
-    def set_arbitrary_waveform(self, name: str, samples: float) -> None:
+    def set_arbitrary_waveform(self, name: str, samples: list[float]) -> None:
         """ """
         self.check_voltage_bounds(min(samples), f"'{name}' voltage")
         self.check_voltage_bounds(max(samples), f"'{name}' voltage")

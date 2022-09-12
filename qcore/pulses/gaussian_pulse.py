@@ -36,7 +36,7 @@ class GaussianPulse(Pulse):
         """ """
         return Pulse.BASE_AMP * self.I_ampx
 
-    def sample(self) -> tuple[list, list | float | None]:
+    def sample(self):
         """ """
         start, stop = -self.chop / 2 * self.sigma, self.chop / 2 * self.sigma
         length = int(self.sigma * self.chop)

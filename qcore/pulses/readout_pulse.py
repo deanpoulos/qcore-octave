@@ -1,6 +1,7 @@
 """ """
 
 from pathlib import Path
+from typing import Union
 
 import numpy as np
 
@@ -16,15 +17,15 @@ class ReadoutPulse(Pulse):
     def __init__(
         self,
         name: str,
-        weights: tuple[float, float, float, float] | str = (1.0, 0.0, 0.0, 1.0),
-        threshold: float | None = None,  # not None only for Optimized weights
+        weights: Union[tuple[float, float, float, float], str] = (1.0, 0.0, 0.0, 1.0),
+        threshold: Union[float, None] = None,  # not None only for Optimized weights
         **parameters,
     ) -> None:
         """ """
         # for constant Weights, specify tuple (i_cos, i_sin, q_cos, q_sin)
         # for optimized Weights, specify path string to npz file
-        self.weights: tuple[float, float, float, float] | str = weights
-        self.threshold: float | None = threshold
+        self.weights = weights
+        self.threshold = threshold
         super().__init__(name=name, **parameters)
 
     @property

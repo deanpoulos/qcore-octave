@@ -1,5 +1,7 @@
 """ """
 
+from typing import Union
+
 import numpy as np
 
 from qcore.pulses.pulse import Pulse
@@ -13,7 +15,7 @@ class ConstantPulse(Pulse):
         name: str,
         length: int = 1000,  # in ns
         I_ampx: float = 1.0,
-        Q_ampx: None | float = 0.0,
+        Q_ampx: Union[None, float] = 0.0,
         pad: int = 0,
         **parameters,
     ) -> None:
@@ -32,7 +34,7 @@ class ConstantPulse(Pulse):
         """ """
         return Pulse.BASE_AMP * self.I_ampx
 
-    def sample(self) -> tuple[float, float | None] | tuple[list, list | None]:
+    def sample(self):
         """ """
         has_constant_waveform = not self.pad
         if has_constant_waveform:
@@ -40,12 +42,12 @@ class ConstantPulse(Pulse):
         else:
             return self._sample_arbitrary_waveform()
 
-    def _sample_constant_waveform(self) -> tuple[float, float | None]:
+    def _sample_constant_waveform(self):
         """ """
         total_amp = self.total_I_amp
         return (total_amp, 0.0) if self.has_mixed_waveforms() else (total_amp, None)
 
-    def _sample_arbitrary_waveform(self) -> tuple[list, float | None]:
+    def _sample_arbitrary_waveform(self):
         """ """
         samples = np.ones(self.length)
         pad = np.zeros(self.pad) if self.pad else []

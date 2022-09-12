@@ -6,7 +6,7 @@ authors = ["qcrew <general.qcrew@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.11"
+python = ">=3.9,<3.11"
 labctrl = "^0.4"
 PyVISA = "^1.12.0"
 qm-qua = "^1.0.0"

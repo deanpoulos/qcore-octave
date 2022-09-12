@@ -96,9 +96,9 @@ class SA124(Instrument):
 
         # these parameters are queried from the device after a sweep has been requested
         # they are set to None when the center, span, or rbw changes prior to a sweep
-        self._sweep_length: int | None = None
-        self._start_frequency: float | None = None
-        self._bin_size: float | None = None
+        self._sweep_length: int = None
+        self._start_frequency: float = None
+        self._bin_size: float = None
 
         super().__init__(id, name=name, center=center, span=span, rbw=rbw, power=power)
 

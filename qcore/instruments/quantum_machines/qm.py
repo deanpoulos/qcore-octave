@@ -14,13 +14,13 @@ from qcore.elements.mode import Mode
 class QM(Instrument):
     """By convention, we ensure only one QM is open at a given time"""
 
-    def __init__(self, id: str | None = None, name: str = "QM") -> None:
+    def __init__(self, id: str = None, name: str = "QM") -> None:
         """ """
         self._status: bool = None
 
         self._qmm: QuantumMachinesManager = None
         self._qm: QuantumMachine = None
-        self._qm_config: QMConfig | None = None
+        self._qm_config: QMConfig = None
         self._qcb: QMConfigBuilder = QMConfigBuilder()
 
         super().__init__(id=id, name=name)
@@ -44,7 +44,7 @@ class QM(Instrument):
         """ """
         return self._status
 
-    def get_config(self) -> QMConfig | None:
+    def get_config(self) -> QMConfig:
         """ """
         return self._qm_config
 

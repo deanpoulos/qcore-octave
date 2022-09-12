@@ -28,7 +28,7 @@ class RampedConstantPulse(ConstantPulse):
         """ """
         return self.ramp * 2 + self.length + self.pad
 
-    def sample(self) -> tuple[float, float | None] | tuple[list, list | None]:
+    def sample(self):
         """ """
         has_constant_waveform = not (self.pad or self.ramp)
         if has_constant_waveform:
@@ -36,7 +36,7 @@ class RampedConstantPulse(ConstantPulse):
         else:
             return self._sample_arbitrary_waveform()
 
-    def _sample_arbitrary_waveform(self) -> tuple[list, list | None]:
+    def _sample_arbitrary_waveform(self):
         rampfn = RAMP_MAP[self.rampfn] if self.rampfn is not None else False
         up = rampfn(self.ramp, up=True) if rampfn else []
         samples = np.ones(self.length)

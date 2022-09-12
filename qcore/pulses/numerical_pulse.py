@@ -1,5 +1,7 @@
 """ """
 
+from typing import Union
+
 import numpy as np
 
 from qcore.pulses.pulse import Pulse
@@ -12,10 +14,10 @@ class NumericalPulse(Pulse):
         self,
         path: str,
         name: str,
-        length: int | None = None,  # None when no NumericalPulse is loaded from npzfile
+        length: Union[int, None] = None,  # None when no NumericalPulse is loaded
         I_ampx: float = 1.0,
         Q_ampx: float = 1.0,
-        pad: int | None = None,
+        pad: Union[int, None] = None,
         **parameters,
     ) -> None:
         """ """

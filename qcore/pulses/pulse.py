@@ -1,5 +1,7 @@
 """ """
 
+from typing import Union
+
 from labctrl import Resource
 from labctrl.logger import logger
 
@@ -17,9 +19,9 @@ class Pulse(Resource):
         name: str,
         length: int,
         I_ampx: float,
-        Q_ampx: None | float,  # set None for single waveform pulses
+        Q_ampx: Union[None, float],  # set None for single waveform pulses
         pad: int,
-        digital_marker: DigitalWaveform | None = None,
+        digital_marker: Union[DigitalWaveform, None] = None,
         **parameters,
     ) -> None:
         """ """
@@ -42,19 +44,21 @@ class Pulse(Resource):
         """ """
         return self.I_ampx is not None and self.Q_ampx is not None
 
-    def sample(self) -> tuple[float, float | None] | tuple[list, list | None]:
+    def sample(
+        self,
+    ) -> Union[tuple[float, Union[float, None]], tuple[list, Union[list, None]]]:
         """ """
         raise NotImplementedError("Subclasses must implement 'sample()'.")
 
     @property
-    def digital_marker(self) -> DigitalWaveform | None:
+    def digital_marker(self) -> Union[DigitalWaveform, None]:
         """ """
         return self._digital_marker
 
     @digital_marker.setter
-    def digital_marker(self, value: DigitalWaveform | None) -> None:
+    def digital_marker(self, value: Union[DigitalWaveform, None]) -> None:
         """ """
-        if not isinstance(value, (DigitalWaveform | None)):
-            raise ValueError(f"Invalid {value = }, must be {DigitalWaveform | None}.")
+        if value is not None and not isinstance(value, DigitalWaveform):
+            raise ValueError(f"Invalid {value = }, must be {DigitalWaveform}.")
         self._digital_marker = value
         logger.debug(f"Set {self} digital marker to {value}.")
