@@ -11,6 +11,7 @@ labctrl = "^0.4"
 PyVISA = "^1.12.0"
 qm-qua = "^1.0.0"
 PyQt5 = "5.15.4"
+Pyro5 = "^5.13.1"
 
 [tool.poetry.group.dev.dependencies]
 pyqt5-tools = "^5.15.4.3.2"
