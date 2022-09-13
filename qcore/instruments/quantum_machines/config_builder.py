@@ -1,13 +1,11 @@
 """ """
 
 from collections import defaultdict
-from copy import deepcopy
 from typing import Any
 
 from labctrl.logger import logger
 import numpy as np
 
-import qcore.elements.iq_mixer as iq_mixer
 from qcore.elements.mode import Mode
 from qcore.elements.readout import Readout
 from qcore.instruments.vaunix.lms import LMS
@@ -34,11 +32,11 @@ class QMConfig(defaultdict):
     MIN_WAVEFORM_VOLTAGE: float = -0.5  # V
     MAX_WAVEFORM_VOLTAGE: float = 0.5
     MIN_MCM_VALUE: float = -2.0  # MCM means mixer correction matrix
-    MAX_MCM_VALUE: float = 2 - 2**-16
+    MAX_MCM_VALUE: float = 2 - 2 ** -16
     CLOCK_CYCLE: int = 4  # ns, also defined in qcore.pulses.pulse.Pulse
     MIN_TIME_OF_FLIGHT: int = 24  # ns
     MIN_PULSE_LENGTH: int = 16  # ns
-    MAX_PULSE_LENGTH: int = 2**31 - 1  # ns
+    MAX_PULSE_LENGTH: int = 2 ** 31 - 1  # ns
 
     def __init__(self) -> None:
         """ """
@@ -78,7 +76,7 @@ class QMConfig(defaultdict):
         ports, offsets = mode.ports, mode.mixer_offsets
         mixer_name = f"mixer_{ports['I']}{ports['Q']}"
 
-        mixer_correction_matrix = iq_mixer.correction_matrix(offsets["G"], offsets["P"])
+        mixer_correction_matrix = self.get_correction_matrix(offsets["G"], offsets["P"])
         self.check_mcm_bounds(mixer_correction_matrix)
         mixer_config = {
             "intermediate_frequency": int(int_freq),
@@ -229,6 +227,18 @@ class QMConfig(defaultdict):
         else:
             raise ValueError(f"Invalid port {key = } and {number = } for {mode}.")
         logger.debug(f"Set '{mode.name}' port {key = } and {number = }.")
+
+    def get_correction_matrix(g: float, p: float) -> list[float, float, float, float]:
+        """ """
+        try:
+            cos, sin = np.cos(p), np.sin(p)
+            coefficient = 1 / ((1 - g ** 2) * (2 * cos ** 2 - 1))
+        except TypeError:
+            message = f"Invalid offset value(s): {g = }, {p = }, both must be {float}."
+            raise ValueError(message) from None
+        else:
+            matrix = ((1 - g) * cos, (1 + g) * sin, (1 - g) * sin, (1 + g) * cos)
+            return [coefficient * value for value in matrix]
 
     def set_pulse(self, pulse: Pulse, pulse_name: str) -> None:
         """ """
