@@ -1,6 +1,7 @@
 """ Python driver for Anritsu VNA MS46522B """
 
 from labctrl import Instrument
+from labctrl.errors import ConnectionError
 import pyvisa
 
 
@@ -47,7 +48,11 @@ class MS46522B(Instrument):
         if self._handle is not None:
             self.disconnect()
         resource_name = f"TCPIP0::{self.id}::INSTR"
-        self._handle = pyvisa.ResourceManager().open_resource(resource_name)
+        try:
+            self._handle = pyvisa.ResourceManager().open_resource(resource_name)
+        except pyvisa.errors.VisaIOError as err:
+            details = f"{err.abbreviation} : {err.description}"
+            raise ConnectionError(f"Failed to connect {self}, {details = }") from None
 
     def disconnect(self) -> None:
         """ """

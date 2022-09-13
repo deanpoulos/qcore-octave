@@ -32,7 +32,11 @@ class GS200(Instrument):
         if self._handle is not None:
             self.disconnect()
         resource_name = f"USB::0xB21::0x39::{self.id}::INSTR"
-        self._handle = pyvisa.ResourceManager().open_resource(resource_name)
+        try:
+            self._handle = pyvisa.ResourceManager().open_resource(resource_name)
+        except pyvisa.errors.VisaIOError as err:
+            details = f"{err.abbreviation} : {err.description}"
+            raise ConnectionError(f"Failed to connect {self}, {details = }") from None
 
     def disconnect(self) -> None:
         """ """

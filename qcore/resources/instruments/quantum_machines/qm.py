@@ -1,6 +1,7 @@
 """ """
 
 from labctrl import Instrument
+from labctrl.errors import ConnectionError
 from qm.QuantumMachine import QuantumMachine
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.QmJob import QmJob
@@ -25,12 +26,20 @@ class QM(Instrument):
 
         super().__init__(id=id, name=name)
 
+    def __repr__(self) -> str:
+        """ """
+        return self.__class__.__name__
+
     def connect(self) -> None:
         """ """
         if self._qmm is not None:
             self.disconnect()
-        self._qmm = QuantumMachinesManager(host=self.id)  # TODO error handling
-        self._status = True
+        try:
+            self._qmm = QuantumMachinesManager()  # TODO error handling
+        except Exception as err:
+            raise ConnectionError(f"Failed to connect QM. Details: {err}.") from None
+        else:
+            self._status = True
 
     def disconnect(self) -> None:
         """ """

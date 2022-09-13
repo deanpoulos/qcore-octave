@@ -83,8 +83,8 @@ class LMS(Instrument):
             if not error:  # 0 indicates successful device initialization
                 self._handle = handle
                 return
-            raise ConnectionError(f"Failed to connect {self}")
-        raise ConnectionError(f"{self} is not available for connection")
+            raise ConnectionError(f"Failed to connect {self}.")
+        raise ConnectionError(f"{self} is not available for connection.")
 
     def disconnect(self):
         """ """
@@ -102,7 +102,7 @@ class LMS(Instrument):
         value = DLL.fnLMS_GetRF_On(self._handle)
         bounds = (0, 1)
         if value not in bounds:
-            message = f"Output {value = } out of {bounds = }, check USB connection"
+            message = f"Output {value = } out of {bounds = }, check USB connection."
             raise ConnectionError(message)
         return bool(value)
 
@@ -110,7 +110,7 @@ class LMS(Instrument):
     def output(self, value: bool) -> None:
         """ """
         if not isinstance(value, bool):
-            message = f"Expect boolean output value, not {value = } of {type(value)}"
+            message = f"Expect boolean output value, not {value = } of {type(value)}."
             raise ValueError(message)
         self._errorcheck(DLL.fnLMS_SetRFOn(self._handle, value))
 
@@ -141,12 +141,12 @@ class LMS(Instrument):
         try:
             in_bounds = self.min_frequency <= value <= self.max_frequency
         except TypeError:
-            message = f"Expect frequency of {float}, got {value = } of {type(value)}"
+            message = f"Expect frequency of {float}, got {value = } of {type(value)}."
             raise ValueError(message)
         else:
             if not in_bounds:
                 bounds = f"[{self.min_frequency:.2E}, {self.max_frequency:.2E}]"
-                raise ValueError(f"Frequency {value = :E} out of {bounds = }")
+                raise ValueError(f"Frequency {value = :E} out of {bounds = }.")
         self._errorcheck(DLL.fnLMS_SetFrequency(self._handle, from_frequency(value)))
 
     @property
@@ -166,7 +166,7 @@ class LMS(Instrument):
         in_bounds = self.min_power <= value <= self.max_power
         if not in_bounds:
             bounds = f"[{self.min_power:}, {self.max_power:}]"
-            message = f"Power {value = } out of {bounds = }, check USB connection"
+            message = f"Power {value = } out of {bounds = }, check USB connection."
             raise ConnectionError(message)
         return value
 
@@ -176,10 +176,10 @@ class LMS(Instrument):
         try:
             in_bounds = self.min_power <= value <= self.max_power
         except TypeError:
-            message = f"Expect power of {float}, got {value = } of {type(value)}"
+            message = f"Expect power of {float}, got {value = } of {type(value)}."
             raise ValueError(message)
         else:
             if not in_bounds:
                 bounds = f"[{self.min_power:}, {self.max_power:}]"
-                raise ValueError(f"Power {value = } out of {bounds = }")
+                raise ValueError(f"Power {value = } out of {bounds = }.")
         self._errorcheck(DLL.fnLMS_SetPowerLevel(self._handle, from_power(value)))
