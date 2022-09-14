@@ -2,10 +2,10 @@
 
 import time
 
-from labctrl import Instrument
-from labctrl.errors import ConnectionError
 import numpy as np
 import pyvisa
+
+from qcore.instrument import Instrument, ConnectionError
 
 
 class GS200(Instrument):

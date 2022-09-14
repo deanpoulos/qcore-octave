@@ -1,9 +1,8 @@
 """ Python driver for Anritsu VNA MS46522B """
 
-from labctrl import Instrument
-from labctrl.errors import ConnectionError
 import pyvisa
 
+from qcore.instrument import Instrument, ConnectionError
 
 class MS46522B(Instrument):
     """ """

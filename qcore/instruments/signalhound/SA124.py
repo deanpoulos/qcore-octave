@@ -3,10 +3,10 @@
 from ctypes import CDLL, byref, c_char_p, c_double, c_int
 from pathlib import Path
 
-from labctrl import Instrument
-from labctrl.errors import ConnectionError
 from labctrl.logger import logger
 import numpy as np
+
+from qcore.instrument import Instrument, ConnectionError
 
 SA = CDLL(str(Path(__file__).parent / "sa124.dll"))
 

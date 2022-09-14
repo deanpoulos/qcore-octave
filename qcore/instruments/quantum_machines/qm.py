@@ -1,12 +1,11 @@
 """ """
 
-from labctrl import Instrument
-from labctrl.errors import ConnectionError
 from qm.QuantumMachine import QuantumMachine
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.QmJob import QmJob
 from qm.qua._dsl import _ProgramScope
 
+from qcore.instrument import Instrument, ConnectionError
 from qcore.instruments.quantum_machines.config_builder import QMConfigBuilder, QMConfig
 from qcore.instruments.vaunix.lms import LMS
 from qcore.elements.mode import Mode

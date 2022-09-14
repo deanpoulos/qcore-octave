@@ -1,6 +1,6 @@
 """ """
 
-from labctrl import Resource
+from qcore.resource import Resource
 
 
 class RFSwitch(Resource):

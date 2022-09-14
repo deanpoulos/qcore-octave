@@ -4,29 +4,12 @@ from multiprocessing import Event, Process
 import time
 from typing import Any, Type
 
-from labctrl import Instrument
-from labctrl.errors import ConnectionError
 from labctrl.logger import logger
 import Pyro5.api as pyro
 import Pyro5.errors
 
-from qcore.instruments.anritsu import MS46522B
-from qcore.instruments.quantum_machines import QM
-from qcore.instruments.signalcore import SC5503B, SC5511A
-from qcore.instruments.signalhound import SA124
-from qcore.instruments.vaunix import LMS
-from qcore.instruments.yokogawa import GS200
-
-# key: Instrument class, value: list of ids of instruments qcrew has of the given class
-INSTRUMENT_MAP = {
-    MS46522B: ["VNA1"],
-    QM: [None],
-    SC5503B: [10002656],
-    SC5511A: [10002657],
-    SA124: [19184645, 20234154],
-    LMS: list(range(25330, 25338)),
-    GS200: ["90X823743", "91X336839"],
-}
+from qcore.instrument import Instrument, ConnectionError
+from qcore.instruments.config import InstrumentConfig
 
 
 class ServerError(Exception):
@@ -79,7 +62,7 @@ def serve(config: dict[Type[Instrument], list[Any]] = None, event=None) -> None:
     """ """
     logger.info("Setting up the instrument server...")
 
-    config = INSTRUMENT_MAP if config is None else config
+    config = InstrumentConfig() if config is None else config
     instruments = []
     for cls, ids in config.items():
         for id in ids:

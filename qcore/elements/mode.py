@@ -1,12 +1,12 @@
 """ """
 
-from labctrl import Resource
 from labctrl.logger import logger
 
 from qcore.elements.rf_switch import RFSwitch
 from qcore.pulses.pulse import Pulse
 from qcore.pulses.digital_waveform import DigitalWaveform
 from qcore.pulses.readout_pulse import ReadoutPulse
+from qcore.resource import Resource
 
 
 class Mode(Resource):

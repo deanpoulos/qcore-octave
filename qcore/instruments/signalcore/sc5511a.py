@@ -14,7 +14,7 @@ from ctypes import (
 )
 from pathlib import Path
 
-from labctrl.instrument import Instrument
+from qcore.instrument import Instrument
 
 
 class RFParams(Structure):
