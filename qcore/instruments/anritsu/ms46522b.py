@@ -2,7 +2,7 @@
 
 import pyvisa
 
-from qcore.instrument import Instrument, ConnectionError
+from qcore.instruments.instrument import Instrument, ConnectionError
 
 class MS46522B(Instrument):
     """ """

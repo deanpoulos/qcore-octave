@@ -5,7 +5,7 @@ import time
 import numpy as np
 import pyvisa
 
-from qcore.instrument import Instrument, ConnectionError
+from qcore.instruments.instrument import Instrument, ConnectionError
 
 
 class GS200(Instrument):

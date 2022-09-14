@@ -8,7 +8,7 @@ from labctrl.logger import logger
 import Pyro5.api as pyro
 import Pyro5.errors
 
-from qcore.instrument import Instrument, ConnectionError
+from qcore.instruments.instrument import Instrument, ConnectionError
 from qcore.instruments.config import InstrumentConfig
 
 
