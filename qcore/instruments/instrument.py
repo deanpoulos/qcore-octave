@@ -1,7 +1,5 @@
 """ """
 
-from typing import Any
-
 from labctrl.logger import logger
 
 from qcore.resource import Resource
@@ -14,7 +12,7 @@ class ConnectionError(Exception):
 class Instrument(Resource):
     """ """
 
-    def __init__(self, id: Any, **parameters) -> None:
+    def __init__(self, id: str, **parameters) -> None:
         """ """
         self._id = id
         self.connect()
@@ -22,12 +20,12 @@ class Instrument(Resource):
 
     def __repr__(self) -> str:
         """ """
-        return f"{self.__class__.__name__}#{self._id}-{self._name}"
+        return f"{self.__class__.__name__}#{self._id}"
 
     @property
-    def id(self) -> Any:
+    def id(self) -> str:
         """ """
-        return self._id
+        return str(self._id)
 
     @property
     def status(self) -> bool:
@@ -49,7 +47,7 @@ class Instrument(Resource):
             raise ConnectionError(msg)
         super().configure(**parameters)
 
-    def snapshot(self) -> dict[str, Any]:
+    def snapshot(self) -> dict:
         """ """
         if not self.status:
             logger.warning(f"{self} has disconnected, returning a minimal snapshot.")
