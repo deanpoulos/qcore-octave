@@ -110,7 +110,7 @@ class SC5511A(Instrument):
     def __init__(
         self,
         name: str,
-        id: int,
+        id: str,
         frequency: float = 6e9,
         power: float = 0.0,
         output: bool = False,
@@ -126,7 +126,7 @@ class SC5511A(Instrument):
         """ """
         if self.status or self._handle is not None:
             self.disconnect()
-        self._handle = SC.sc5511a_open_device(str(self.id).encode())
+        self._handle = SC.sc5511a_open_device(self.id.encode())
 
     def disconnect(self):
         """ """

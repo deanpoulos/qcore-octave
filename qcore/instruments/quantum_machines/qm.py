@@ -34,7 +34,7 @@ class QM(Instrument):
         if self._qmm is not None:
             self.disconnect()
         try:
-            self._qmm = QuantumMachinesManager()  # TODO error handling
+            self._qmm = QuantumMachinesManager()
         except Exception as err:
             raise ConnectionError(f"Failed to connect QM. Details: {err}.") from None
         else:

@@ -70,7 +70,7 @@ class SC5503B(Instrument):
     def __init__(
         self,
         name: str,
-        id: int,
+        id: str,
         frequency: float = 6e9,
         power: float = 0.0,
         output: bool = False,
@@ -87,7 +87,7 @@ class SC5503B(Instrument):
             self.disconnect()
 
         self._handle = c_void_p()
-        SC.sc5503b_OpenDevice(str(self.id).encode(), byref(self._handle))
+        SC.sc5503b_OpenDevice(self.id.encode(), byref(self._handle))
 
     def disconnect(self):
         """ """

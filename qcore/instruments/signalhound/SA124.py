@@ -77,7 +77,7 @@ class SA124(Instrument):
     def __init__(
         self,
         name: str,
-        id: int,
+        id: str,
         center: float = 5e9,
         span: float = 500e6,
         rbw: float = DEFAULT_RBW,
@@ -125,7 +125,7 @@ class SA124(Instrument):
             self.disconnect()
 
         device = c_int(-1)
-        self._errorcheck(SA.saOpenDeviceBySerialNumber(byref(device), self.id))
+        self._errorcheck(SA.saOpenDeviceBySerialNumber(byref(device), int(self.id)))
         self._handle = device.value
         self._status = True
         self._configure_sweep()  # to ensure device is ready to sweep upon connection

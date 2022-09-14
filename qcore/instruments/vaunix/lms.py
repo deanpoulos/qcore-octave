@@ -42,7 +42,7 @@ class LMS(Instrument):
     def __init__(
         self,
         name: str,
-        id: int,
+        id: str,
         frequency: float = 6e9,
         power: float = 0.0,
         output: bool = False,
@@ -77,7 +77,7 @@ class LMS(Instrument):
         DLL.fnLMS_GetDevInfo(deviceinfo)
         ids = [DLL.fnLMS_GetSerialNumber(deviceinfo[i]) for i in range(numdevices)]
         if self.id in ids:  # LMS is found, try opening it
-            handle = deviceinfo[ids.index(self.id)]
+            handle = deviceinfo[ids.index(int(self.id))]
             error = DLL.fnLMS_InitDevice(handle)
             if not error:  # 0 indicates successful device initialization
                 self._handle = handle
