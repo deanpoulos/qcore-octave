@@ -6,3 +6,13 @@ from qcore.pulses.gaussian_pulse import GaussianPulse
 from qcore.pulses.numerical_pulse import NumericalPulse
 from qcore.pulses.ramped_constant_pulse import RampedConstantPulse
 from qcore.pulses.readout_pulse import ConstantReadoutPulse, GaussianReadoutPulse
+
+__all__ = [
+    "ConstantPulse",
+    "DigitalWaveform",
+    "GaussianPulse",
+    "NumericalPulse",
+    "RampedConstantPulse",
+    "ConstantReadoutPulse",
+    "GaussianReadoutPulse",
+]
