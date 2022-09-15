@@ -12,7 +12,6 @@ class InstrumentConfig(dict):
         value: list of ids corresponding to the instruments qcrew has of the given class
         """
         self[MS46522B] = ["VNA1"]
-        self[QM] = ["None"]
         self[SC5503B] = ["10002656"]
         self[SC5511A] = ["10002657"]
         self[SA124] = ["19184645", "20234154"]

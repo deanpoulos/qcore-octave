@@ -63,8 +63,12 @@ class LMS(Instrument):
 
     @property
     def status(self) -> bool:
-        """A connected LMS responds with an integer status code of 16395"""
-        return DLL.fnLMS_GetDeviceStatus(self._handle) == 16395
+        """A connected LMS status code has 'b' as its final hex digit"""
+        code = hex(DLL.fnLMS_GetDeviceStatus(self._handle))
+        status = code[-1] == "b"
+        if not status:
+            self._handle = None
+        return status
 
     def connect(self) -> None:
         """ """
@@ -76,8 +80,9 @@ class LMS(Instrument):
         deviceinfo = (c_int * numdevices)()
         DLL.fnLMS_GetDevInfo(deviceinfo)
         ids = [DLL.fnLMS_GetSerialNumber(deviceinfo[i]) for i in range(numdevices)]
-        if self.id in ids:  # LMS is found, try opening it
-            handle = deviceinfo[ids.index(int(self.id))]
+        id = int(self.id)
+        if id in ids:  # LMS is found, try opening it
+            handle = deviceinfo[ids.index(id)]
             error = DLL.fnLMS_InitDevice(handle)
             if not error:  # 0 indicates successful device initialization
                 self._handle = handle

@@ -7,11 +7,11 @@ import Pyro5.errors
 
 from qcore.instruments.instrument import Instrument, ConnectionError
 from qcore.instruments.config import InstrumentConfig
+from qcore.resource import Resource
 
 
 class ServerError(Exception):
     """ """
-
 
 @pyro.expose
 class Server:
@@ -38,9 +38,10 @@ class Server:
         """ """
         return self._instruments.copy()
 
-    def register(self) -> None:
-        """ """
+    def serve(self) -> None:
+        """blocking function"""
         instrument_classes = {instrument.__class__ for instrument in self._instruments}
+        instrument_classes |= {Resource, Instrument}
         for instrument_class in instrument_classes:
             pyro.expose(instrument_class)
 
@@ -50,8 +51,6 @@ class Server:
             self._services.append(uri)
         self._daemon.register(self, objectId=Server.NAME)
 
-    def serve(self) -> None:
-        """blocking function"""
         with self._daemon:
             self._daemon.requestLoop()
 
