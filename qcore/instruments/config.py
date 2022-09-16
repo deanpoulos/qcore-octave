@@ -1,6 +1,40 @@
 """ """
 
+from asyncio import streams
 from qcore.instruments import *
+from qcore.instruments.instrument import Instrument
+
+
+class DummyInstrument(Instrument):
+    """ """
+
+    def __init__(self, **parameters) -> None:
+        super().__init__(**parameters)
+        self._dummy_settable = "YOU CAN SET ME"
+
+    def connect(self) -> None:
+        """ """
+        print("dummy instrument connected")
+
+    def disconnect(self) -> None:
+        """ """
+        print("dummy instrument disconnected")
+
+    @property
+    def status(self) -> bool:
+        return True
+
+    @property
+    def dummy_gettable(self) -> str:
+        return "GET THIS"
+
+    @property
+    def dummy_settable(self) -> str:
+        return self._dummy_settable
+
+    @dummy_settable.setter
+    def dummy_settable(self, value) -> None:
+        self._dummy_settable = value
 
 
 class InstrumentConfig(dict):
@@ -17,3 +51,4 @@ class InstrumentConfig(dict):
         self[SA124] = ["19184645", "20234154"]
         self[LMS] = [str(id) for id in range(25330, 25338)]
         self[GS200] = ["90X823743", "91X336839"]
+        self[DummyInstrument] = [""]

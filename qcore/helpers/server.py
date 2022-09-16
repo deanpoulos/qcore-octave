@@ -33,11 +33,6 @@ class Server:
         """ """
         return self._services.copy()
 
-    @property
-    def instruments(self) -> list[Instrument]:
-        """ """
-        return self._instruments.copy()
-
     def serve(self) -> None:
         """blocking function"""
         instrument_classes = {instrument.__class__ for instrument in self._instruments}
@@ -96,7 +91,7 @@ class Client:
         else:
             instruments = [pyro.Proxy(uri) for uri in services]
             print(f"Found {len(instruments)} instrument(s) on the server.")
-            return server, instruments
+            return (server, instruments)
 
     def unlink(self, server: pyro.Proxy, *instruments: pyro.Proxy) -> None:
         """ """

@@ -13,12 +13,12 @@ from qcore.helpers import Client, Server
 class SetupServerWorker(QtCore.QObject):
     """ """
 
-    server_ready = QtCore.pyqtSignal(Server)
+    server_ready = QtCore.pyqtSignal()
 
     def run(self, config) -> None:
         """ """
         server = Server(config)
-        self.server_ready.emit(server)
+        self.server_ready.emit()
         server.serve()
 
 
@@ -35,6 +35,7 @@ class Verse(QtWidgets.QWidget):
         self.ui.setupUi(self)
 
         self.instrument_server: Server = None
+        self.instruments: list = None
         self.instrument_config = defaultdict(list)
 
         instrumentspec = InstrumentConfig()
@@ -55,7 +56,7 @@ class Verse(QtWidgets.QWidget):
         self.setup_server_thread = QtCore.QThread()
         self.setup_server_worker.moveToThread(self.setup_server_thread)
         self.setup_server_thread.start()
-        self.setup_server_worker.server_ready.connect(self.receive_server)
+        self.setup_server_worker.server_ready.connect(self.handle_server_ready)
         self.server_requested.connect(self.setup_server_worker.run)
 
         logger.remove()
@@ -135,10 +136,14 @@ class Verse(QtWidgets.QWidget):
         self.ui.unstage_button.setEnabled(False)
         self.server_requested.emit(self.instrument_config)
 
-    def receive_server(self, server: Server) -> None:
+    def handle_server_ready(self) -> None:
         """ """
-        self.instrument_server = server
-        connected_instruments = {instrument.name for instrument in server.instruments}
+        QtCore.QTimer.singleShot(200, self.show_instruments)
+
+    def show_instruments(self) -> None:
+        """ """
+        self.instrument_server, self.instruments = Client().link()
+        connected_instruments = {instrument.name for instrument in self.instruments}
         cfg = self.instrument_config.items()
         chosen_instruments = {f"{cls.__name__}#{id}" for cls, ids in cfg for id in ids}
 
@@ -147,7 +152,7 @@ class Verse(QtWidgets.QWidget):
         for instrument_name in chosen_instruments - connected_instruments:
             logger.info(f"Failed to connect instrument '{instrument_name}'    :-(((")
         num_connected, num_chosen = len(connected_instruments), len(chosen_instruments)
-        logger.info(f"Now serving {num_connected} / {num_chosen} instruments!!!")
+        logger.info(f"Now serving {num_connected} out of {num_chosen} instruments!!!")
 
         self.ui.teardown_button.setEnabled(True)
 
@@ -162,6 +167,7 @@ class Verse(QtWidgets.QWidget):
         self.ui.teardown_button.setEnabled(False)
         self.instrument_server = None
         self.ui.stage_button.setEnabled(True)
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
