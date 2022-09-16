@@ -2,18 +2,19 @@
 
 from collections import defaultdict
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets as qtw
+from PyQt5 import QtCore as qtc
 
 from qcore.instruments.config import InstrumentConfig
-from qcore.gui.ui_verse import Ui_verse
+from qcore.gui.verse_ui import Ui_verse
 from qcore.helpers import logger
 from qcore.helpers import Client, Server
 
 
-class SetupServerWorker(QtCore.QObject):
+class SetupServerWorker(qtc.QObject):
     """ """
 
-    server_ready = QtCore.pyqtSignal()
+    server_ready = qtc.pyqtSignal()
 
     def run(self, config) -> None:
         """ """
@@ -22,10 +23,10 @@ class SetupServerWorker(QtCore.QObject):
         server.serve()
 
 
-class Verse(QtWidgets.QWidget):
+class Verse(qtw.QWidget):
     """ """
 
-    server_requested = QtCore.pyqtSignal(dict)
+    server_requested = qtc.pyqtSignal(dict)
 
     def __init__(self, *args, **kwargs) -> None:
         """ """
@@ -53,7 +54,7 @@ class Verse(QtWidgets.QWidget):
         self.ui.teardown_button.clicked.connect(self.teardown_server)
 
         self.setup_server_worker = SetupServerWorker()
-        self.setup_server_thread = QtCore.QThread()
+        self.setup_server_thread = qtc.QThread()
         self.setup_server_worker.moveToThread(self.setup_server_thread)
         self.setup_server_thread.start()
         self.setup_server_worker.server_ready.connect(self.handle_server_ready)
@@ -63,6 +64,8 @@ class Verse(QtWidgets.QWidget):
         logfmt = "[{time:YY-MM-DD  HH:mm:ss}]   [{level}]   [{module}]   {message}"
         sink = self.ui.logbox.append
         logger.add(sink, format=logfmt, level="INFO", backtrace=False, diagnose=False)
+
+        self.showMaximized()
 
     def closeEvent(self, event) -> None:
         """ """
@@ -119,7 +122,7 @@ class Verse(QtWidgets.QWidget):
             instrument_type = self.instrument_types[instrument_type_str]
             self.instrument_config[instrument_type].remove(instrument_id)
             (instrument_type_item,) = self.ui.instrument_types_list.findItems(
-                instrument_type_str, QtCore.Qt.MatchFlag.MatchFixedString
+                instrument_type_str, qtc.Qt.MatchFlag.MatchFixedString
             )
             self.ui.instrument_types_list.setCurrentItem(instrument_type_item)
             self.show_instrument_ids()
@@ -138,9 +141,9 @@ class Verse(QtWidgets.QWidget):
 
     def handle_server_ready(self) -> None:
         """ """
-        QtCore.QTimer.singleShot(200, self.show_instruments)
+        qtc.QTimer.singleShot(200, self.link_server)
 
-    def show_instruments(self) -> None:
+    def link_server(self) -> None:
         """ """
         self.instrument_server, self.instruments = Client().link()
         connected_instruments = {instrument.name for instrument in self.instruments}
@@ -156,6 +159,13 @@ class Verse(QtWidgets.QWidget):
 
         self.ui.teardown_button.setEnabled(True)
 
+        if self.instruments:
+            self.show_instruments()
+
+    def show_instruments(self) -> None:
+        """ """
+        
+
     def teardown_server(self) -> None:
         """ """
         self.instrument_server.teardown()
@@ -170,7 +180,7 @@ class Verse(QtWidgets.QWidget):
 
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication([])
+    app = qtw.QApplication([])
     verse = Verse()
     verse.show()
     app.exec()

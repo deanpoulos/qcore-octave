@@ -321,6 +321,9 @@
      </item>
      <item>
       <widget class="QTextEdit" name="logbox">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
        <property name="placeholderText">
         <string>Message log</string>
        </property>

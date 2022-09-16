@@ -15,7 +15,9 @@ class Ui_verse(object):
     def setupUi(self, verse):
         verse.setObjectName("verse")
         verse.resize(960, 523)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(verse.sizePolicy().hasHeightForWidth())
@@ -69,7 +71,9 @@ class Ui_verse(object):
         self.stage_buttons_layout.setObjectName("stage_buttons_layout")
         self.stage_button = QtWidgets.QPushButton(self.server_tab)
         self.stage_button.setEnabled(False)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.stage_button.sizePolicy().hasHeightForWidth())
@@ -78,10 +82,14 @@ class Ui_verse(object):
         self.stage_buttons_layout.addWidget(self.stage_button)
         self.unstage_button = QtWidgets.QPushButton(self.server_tab)
         self.unstage_button.setEnabled(False)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.unstage_button.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.unstage_button.sizePolicy().hasHeightForWidth()
+        )
         self.unstage_button.setSizePolicy(sizePolicy)
         self.unstage_button.setObjectName("unstage_button")
         self.stage_buttons_layout.addWidget(self.unstage_button)
@@ -95,7 +103,9 @@ class Ui_verse(object):
         self.staged_instruments_label.setObjectName("staged_instruments_label")
         self.staged_instruments_layout.addWidget(self.staged_instruments_label)
         self.staged_instruments_list = QtWidgets.QListWidget(self.server_tab)
-        self.staged_instruments_list.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
+        self.staged_instruments_list.setSelectionMode(
+            QtWidgets.QAbstractItemView.MultiSelection
+        )
         self.staged_instruments_list.setObjectName("staged_instruments_list")
         self.staged_instruments_layout.addWidget(self.staged_instruments_list)
         self.server_tab_layout.addLayout(self.staged_instruments_layout)
@@ -103,11 +113,15 @@ class Ui_verse(object):
         self.serve_buttons_layout.setContentsMargins(5, 5, 5, 5)
         self.serve_buttons_layout.setSpacing(20)
         self.serve_buttons_layout.setObjectName("serve_buttons_layout")
-        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem = QtWidgets.QSpacerItem(
+            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.serve_buttons_layout.addItem(spacerItem)
         self.setup_button = QtWidgets.QPushButton(self.server_tab)
         self.setup_button.setEnabled(False)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.setup_button.sizePolicy().hasHeightForWidth())
@@ -116,14 +130,20 @@ class Ui_verse(object):
         self.serve_buttons_layout.addWidget(self.setup_button)
         self.teardown_button = QtWidgets.QPushButton(self.server_tab)
         self.teardown_button.setEnabled(False)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.teardown_button.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.teardown_button.sizePolicy().hasHeightForWidth()
+        )
         self.teardown_button.setSizePolicy(sizePolicy)
         self.teardown_button.setObjectName("teardown_button")
         self.serve_buttons_layout.addWidget(self.teardown_button)
-        spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem1 = QtWidgets.QSpacerItem(
+            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.serve_buttons_layout.addItem(spacerItem1)
         self.serve_buttons_layout.setStretch(0, 3)
         self.serve_buttons_layout.setStretch(1, 2)
@@ -139,6 +159,7 @@ class Ui_verse(object):
         self.verse_tabs.addTab(self.server_tab, "")
         self.verse_layout.addWidget(self.verse_tabs)
         self.logbox = QtWidgets.QTextEdit(verse)
+        self.logbox.setReadOnly(True)
         self.logbox.setObjectName("logbox")
         self.verse_layout.addWidget(self.logbox)
         self.verse_layout.setStretch(0, 3)
@@ -152,19 +173,26 @@ class Ui_verse(object):
     def retranslateUi(self, verse):
         _translate = QtCore.QCoreApplication.translate
         verse.setWindowTitle(_translate("verse", "Verse"))
-        self.instrument_types_label.setText(_translate("verse", "Select instrument type"))
+        self.instrument_types_label.setText(
+            _translate("verse", "Select instrument type")
+        )
         self.instrument_ids_label.setText(_translate("verse", "Select instrument ID"))
         self.stage_button.setText(_translate("verse", "Stage"))
         self.unstage_button.setText(_translate("verse", "Unstage"))
-        self.staged_instruments_label.setText(_translate("verse", "Staged instrument(s)"))
+        self.staged_instruments_label.setText(
+            _translate("verse", "Staged instrument(s)")
+        )
         self.setup_button.setText(_translate("verse", "Setup stage"))
         self.teardown_button.setText(_translate("verse", "Teardown stage"))
-        self.verse_tabs.setTabText(self.verse_tabs.indexOf(self.server_tab), _translate("verse", "Server"))
+        self.verse_tabs.setTabText(
+            self.verse_tabs.indexOf(self.server_tab), _translate("verse", "Server")
+        )
         self.logbox.setPlaceholderText(_translate("verse", "Message log"))
 
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     verse = QtWidgets.QWidget()
     ui = Ui_verse()
