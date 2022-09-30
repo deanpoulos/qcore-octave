@@ -3,6 +3,8 @@
 import inspect
 from typing import Any
 
+from qcore.parameter import Parameter
+
 
 class ResourceMetaclass(type):
     """ """
@@ -13,11 +15,11 @@ class ResourceMetaclass(type):
 
         # find the parameters (gettable and settable) of the Resource class
         mro = inspect.getmro(cls)  # mro means method resolution order
-        cls.properties = {
-            k: v for c in mro for k, v in c.__dict__.items() if isinstance(v, property)
+        cls.params = {
+            k: v for c in mro for k, v in c.__dict__.items() if isinstance(v, Parameter)
         }
-        for name in ("gettables", "parameters", "settables"):
-            del cls.properties[name]  # delete so they can't be configured/snapshotted
+        cls.gettable_params = {k for k, v in cls.params.items() if v.fget is not None}
+        cls.settable_params = {k for k, v in cls.params.items() if v.fset is not None}
 
     def __repr__(cls) -> str:
         """ """
@@ -26,6 +28,8 @@ class ResourceMetaclass(type):
 
 class Resource(metaclass=ResourceMetaclass):
     """ """
+
+    name: str = Parameter()
 
     def __init__(self, name: str, **parameters) -> None:
         """ """
@@ -37,7 +41,7 @@ class Resource(metaclass=ResourceMetaclass):
         """ """
         return f"{self.__class__.__name__} '{self._name}'"
 
-    @property
+    @name.getter
     def name(self) -> str:
         """ """
         return self._name
@@ -54,19 +58,17 @@ class Resource(metaclass=ResourceMetaclass):
     @property
     def parameters(self) -> set[str]:
         """ """
-        return self.__class__.properties.keys() | self._attributes()
+        return self.__class__.params.keys() | self._attributes()
 
     @property
     def gettables(self) -> set[str]:
         """ """
-        properties = self.__class__.properties.items()
-        return self._attributes() | {k for k, v in properties if v.fget is not None}
+        return self._attributes() | self.__class__.gettable_params
 
     @property
     def settables(self) -> set[str]:
         """ """
-        properties = self.__class__.properties.items()
-        return self._attributes() | {k for k, v in properties if v.fset is not None}
+        return self._attributes() | self.__class__.settable_params
 
     def configure(self, **parameters) -> None:
         """ """
@@ -77,5 +79,4 @@ class Resource(metaclass=ResourceMetaclass):
 
     def snapshot(self) -> dict[str, Any]:
         """ """
-        gettables = sorted(self.gettables)
-        return {name: getattr(self, name) for name in gettables}
+        return {name: getattr(self, name) for name in sorted(self.gettables)}

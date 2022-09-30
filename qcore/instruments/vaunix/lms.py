@@ -1,15 +1,24 @@
 """ """
+from __future__ import annotations
 
 from ctypes import CDLL, c_int
 from pathlib import Path
 
 from qcore.instruments.instrument import Instrument, ConnectionError
+from qcore.parameter import Parameter
 
 # DLL driver must be placed in the same folder as this file
 DLL = CDLL(str(Path(__file__).parent / "lms.dll"))
 
-# LMS encodes frequency as an integer of 10Hz steps
-UNIT_FREQUENCY = 10.0
+UNIT_FREQUENCY = 10.0  # LMS encodes frequency as an integer of 10Hz steps
+UNIT_POWER = 0.25  # LMS encodes power level as an integer of 0.25dB steps
+
+
+def check_frequency(value: float, lms: LMS) -> bool:
+    """ """
+    min, max = lms.min_frequency, lms.max_frequency
+    LMS.frequency.hint = f"[{min:.2E}, {max:.2E}]"
+    return min <= value <= max
 
 
 def to_frequency(value: int) -> float:
@@ -22,8 +31,11 @@ def from_frequency(value: int) -> int:
     return int(value / UNIT_FREQUENCY)
 
 
-# LMS encodes power level as an integer of 0.25dB steps
-UNIT_POWER = 0.25
+def check_power(value: float, lms: LMS) -> bool:
+    """ """
+    min, max = lms.min_power, lms.max_power
+    LMS.power.hint = f"[{min}, {max}]"
+    return min <= value <= max
 
 
 def to_power(value: int) -> float:
@@ -38,6 +50,11 @@ def from_power(value: float) -> int:
 
 class LMS(Instrument):
     """ """
+
+    clocked: bool = Parameter()
+    output: bool = Parameter()
+    frequency: float = Parameter(bounds=check_frequency)
+    power: float = Parameter(bounds=check_power)
 
     def __init__(
         self,
@@ -95,28 +112,40 @@ class LMS(Instrument):
         self._errorcheck(DLL.fnLMS_CloseDevice(self._handle))
         self._handle = None
 
-    @property
+    @clocked.getter
     def clocked(self) -> bool:
         """The hex code for PLL_LOCKED flag is 0x00000040 in vnx_LMS_api.h"""
         return bool(int(hex(DLL.fnLMS_GetDeviceStatus(self._handle))[-2]))
 
-    @property
+    @output.getter
     def output(self) -> bool:
         """ """
-        value = DLL.fnLMS_GetRF_On(self._handle)
-        bounds = (0, 1)
-        if value not in bounds:
-            message = f"Output {value = } out of {bounds = }, check USB connection."
-            raise ConnectionError(message)
-        return bool(value)
+        return bool(DLL.fnLMS_GetRF_On(self._handle))
 
     @output.setter
     def output(self, value: bool) -> None:
         """ """
-        if not isinstance(value, bool):
-            message = f"Expect boolean output value, not {value = } of {type(value)}."
-            raise ValueError(message)
         self._errorcheck(DLL.fnLMS_SetRFOn(self._handle, value))
+
+    @frequency.getter
+    def frequency(self) -> float:
+        """ """
+        return to_frequency(DLL.fnLMS_GetFrequency(self._handle))
+
+    @frequency.setter
+    def frequency(self, value: float) -> None:
+        """ """
+        self._errorcheck(DLL.fnLMS_SetFrequency(self._handle, from_frequency(value)))
+
+    @power.getter
+    def power(self) -> float:
+        """ """
+        return to_power(DLL.fnLMS_GetAbsPowerLevel(self._handle))
+
+    @power.setter
+    def power(self, value: float) -> None:
+        """ """
+        self._errorcheck(DLL.fnLMS_SetPowerLevel(self._handle, from_power(value)))
 
     @property
     def min_frequency(self) -> float:
@@ -129,31 +158,6 @@ class LMS(Instrument):
         return to_frequency(DLL.fnLMS_GetMaxFreq(self._handle))
 
     @property
-    def frequency(self) -> float:
-        """ """
-        value = to_frequency(DLL.fnLMS_GetFrequency(self._handle))
-        in_bounds = self.min_frequency <= value <= self.max_frequency
-        if not in_bounds:
-            bounds = f"[{self.min_frequency:.2E}, {self.max_frequency:.2E}]"
-            message = f"Frequency {value = :E} out of {bounds = }, check USB connection"
-            raise ConnectionError(message)
-        return value
-
-    @frequency.setter
-    def frequency(self, value: float) -> None:
-        """ """
-        try:
-            in_bounds = self.min_frequency <= value <= self.max_frequency
-        except TypeError:
-            message = f"Expect frequency of {float}, got {value = } of {type(value)}."
-            raise ValueError(message)
-        else:
-            if not in_bounds:
-                bounds = f"[{self.min_frequency:.2E}, {self.max_frequency:.2E}]"
-                raise ValueError(f"Frequency {value = :E} out of {bounds = }.")
-        self._errorcheck(DLL.fnLMS_SetFrequency(self._handle, from_frequency(value)))
-
-    @property
     def min_power(self) -> float:
         """ """
         return to_power(DLL.fnLMS_GetMinPwr(self._handle))
@@ -162,28 +166,3 @@ class LMS(Instrument):
     def max_power(self) -> float:
         """ """
         return to_power(DLL.fnLMS_GetMaxPwr(self._handle))
-
-    @property
-    def power(self) -> float:
-        """ """
-        value = to_power(DLL.fnLMS_GetAbsPowerLevel(self._handle))
-        in_bounds = self.min_power <= value <= self.max_power
-        if not in_bounds:
-            bounds = f"[{self.min_power:}, {self.max_power:}]"
-            message = f"Power {value = } out of {bounds = }, check USB connection."
-            raise ConnectionError(message)
-        return value
-
-    @power.setter
-    def power(self, value: float) -> None:
-        """ """
-        try:
-            in_bounds = self.min_power <= value <= self.max_power
-        except TypeError:
-            message = f"Expect power of {float}, got {value = } of {type(value)}."
-            raise ValueError(message)
-        else:
-            if not in_bounds:
-                bounds = f"[{self.min_power:}, {self.max_power:}]"
-                raise ValueError(f"Power {value = } out of {bounds = }.")
-        self._errorcheck(DLL.fnLMS_SetPowerLevel(self._handle, from_power(value)))

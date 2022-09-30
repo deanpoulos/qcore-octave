@@ -4,6 +4,8 @@ from labctrl.logger import logger
 
 from qcore.resource import Resource
 
+from qcore.parameter import Parameter
+
 
 class ConnectionError(Exception):
     """ """
@@ -12,9 +14,11 @@ class ConnectionError(Exception):
 class Instrument(Resource):
     """ """
 
+    id: str = Parameter()
+
     def __init__(self, id: str, **parameters) -> None:
         """ """
-        self._id = id
+        self._id = str(id)
         self.connect()
         super().__init__(**parameters)
 
@@ -22,10 +26,10 @@ class Instrument(Resource):
         """ """
         return f"{self.__class__.__name__}#{self._id}"
 
-    @property
+    @id.getter
     def id(self) -> str:
         """ """
-        return str(self._id)
+        return self._id
 
     @property
     def status(self) -> bool:
@@ -57,6 +61,9 @@ class Instrument(Resource):
 class DummyInstrument(Instrument):
     """ """
 
+    gettable: int = Parameter()
+    settable: int = Parameter()
+
     def __init__(self, **parameters) -> None:
         self._status = None
         super().__init__(**parameters)
@@ -74,22 +81,20 @@ class DummyInstrument(Instrument):
     def status(self) -> bool:
         return self._status
 
-    @property
+    @gettable.getter
     def gettable(self) -> int:
         return 0
 
-    @property
+    @settable.getter
     def settable(self) -> int:
         return self._settable
 
     @settable.setter
     def settable(self, value: int) -> None:
-        if not isinstance(value, int):
-            raise ValueError(f"{self} 'settable' must be of {int}.")
         self._settable = value
+
 
 if __name__ == "__main__":
     obj = DummyInstrument(name="d", id="0")
-    print(obj.gettables)
+    print(DummyInstrument.settable.type)
     print(type(obj))
-    
