@@ -49,6 +49,47 @@ class Instrument(Resource):
     def snapshot(self) -> dict:
         """ """
         if not self.status:
-            logger.warning(f"{self} has disconnected, returning a minimal snapshot.")
-            return {"id": self.id, "name": self.name}
+            logger.warning(f"{self} is disconnected, returning a minimal snapshot.")
+            return {"id": self.id, "name": self.name, "status": False}
         return super().snapshot()
+
+
+class DummyInstrument(Instrument):
+    """ """
+
+    def __init__(self, **parameters) -> None:
+        self._status = None
+        super().__init__(**parameters)
+        self._settable = 1
+
+    def connect(self) -> None:
+        """ """
+        self._status = True
+
+    def disconnect(self) -> None:
+        """ """
+        self._status = False
+
+    @property
+    def status(self) -> bool:
+        return self._status
+
+    @property
+    def gettable(self) -> int:
+        return 0
+
+    @property
+    def settable(self) -> int:
+        return self._settable
+
+    @settable.setter
+    def settable(self, value: int) -> None:
+        if not isinstance(value, int):
+            raise ValueError(f"{self} 'settable' must be of {int}.")
+        self._settable = value
+
+if __name__ == "__main__":
+    obj = DummyInstrument(name="d", id="0")
+    print(obj.gettables)
+    print(type(obj))
+    
