@@ -13,25 +13,11 @@ class ResourceMetaclass(type):
 
         # find the parameters (gettable and settable) of the Resource class
         mro = inspect.getmro(cls)  # mro means method resolution order
-        cls._properties = {
+        cls.properties = {
             k: v for c in mro for k, v in c.__dict__.items() if isinstance(v, property)
         }
-        del cls._properties["parameters"]
-
-    @property
-    def properties(cls) -> set[str]:
-        """ """
-        return set(cls._properties.keys())
-
-    @property
-    def gettables(cls) -> set[str]:
-        """ """
-        return {k for k, v in cls._properties.items() if v.fget is not None}
-
-    @property
-    def settables(cls) -> set[str]:
-        """ """
-        return {k for k, v in cls._properties.items() if v.fset is not None}
+        for name in ("gettables", "parameters", "settables"):
+            del cls.properties[name]  # delete so they can't be configured/snapshotted
 
     def __repr__(cls) -> str:
         """ """
@@ -68,16 +54,28 @@ class Resource(metaclass=ResourceMetaclass):
     @property
     def parameters(self) -> set[str]:
         """ """
-        return self.__class__.properties | self._attributes()
+        return self.__class__.properties.keys() | self._attributes()
+
+    @property
+    def gettables(self) -> set[str]:
+        """ """
+        properties = self.__class__.properties.items()
+        return self._attributes() | {k for k, v in properties if v.fget is not None}
+
+    @property
+    def settables(self) -> set[str]:
+        """ """
+        properties = self.__class__.properties.items()
+        return self._attributes() | {k for k, v in properties if v.fset is not None}
 
     def configure(self, **parameters) -> None:
         """ """
-        settables = self._attributes() | self.__class__.settables
+        settables = self.settables
         for name, value in parameters.items():
             if name in settables:
                 setattr(self, name, value)
 
     def snapshot(self) -> dict[str, Any]:
         """ """
-        gettables = self._attributes() | self.__class__.gettables
-        return {name: getattr(self, name) for name in sorted(gettables)}
+        gettables = sorted(self.gettables)
+        return {name: getattr(self, name) for name in gettables}
