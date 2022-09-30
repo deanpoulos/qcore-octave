@@ -43,8 +43,7 @@ class Instrument(Resource):
     def configure(self, **parameters) -> None:
         """ """
         if not self.status:
-            msg = f"Failed to configure {self} as it is not connected (status = False)."
-            raise ConnectionError(msg)
+            raise ConnectionError(f"{self} is not connected (status = False).")
         super().configure(**parameters)
 
     def snapshot(self) -> dict:
