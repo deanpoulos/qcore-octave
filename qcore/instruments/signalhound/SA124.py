@@ -113,11 +113,12 @@ class SA124(Instrument):
         """ """
         if errorcode:  # non-zero values indicate errors
             details = SA.saGetErrorString(errorcode).decode()
+            message = f"{self} got {errorcode = }, {details = }."
             if errorcode < 0:
                 self._status = False
-                raise ConnectionError(f"Got {errorcode = }, {details = }.")
+                raise ConnectionError(message)
             else:
-                logger.warning(f"Got {errorcode = }, {details = }.")
+                logger.warning(message)
 
     def connect(self) -> None:
         """ """
