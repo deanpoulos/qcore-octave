@@ -7,7 +7,7 @@ from PyQt5 import QtCore as qtc
 
 from qcore.instruments.config import InstrumentConfig
 from qcore.instruments.instrument import ConnectionError
-from qcore.gui.server_widget_ui import Ui_server_widget
+from qcore.gui.ui_server_widget import Ui_server_widget
 import qcore.helpers.server as server
 
 
@@ -32,6 +32,7 @@ class ServerWidget(qtw.QWidget):
     """ """
 
     server_requested = qtc.pyqtSignal(dict)
+    is_serving = qtc.pyqtSignal(bool)
 
     def __init__(self, *args, **kwargs) -> None:
         """ """
@@ -138,17 +139,19 @@ class ServerWidget(qtw.QWidget):
     def handle_server_ready(self, is_ready: bool) -> None:
         """ """
         if is_ready:
-            qtc.QTimer.singleShot(500, self.link_server)
+            qtc.QTimer.singleShot(500, self.link_instruments)
         else:
             self.reset()
 
-    def link_server(self) -> None:
+    def link_instruments(self) -> None:
         """ """
         self.server, self.instruments = server.link()
         self.toggle_teardown_button()
+        self.is_serving.emit(True)
 
     def teardown_server(self) -> None:
         """ """
+        self.is_serving.emit(False)
         self.server.teardown()
         self.reset()
 
