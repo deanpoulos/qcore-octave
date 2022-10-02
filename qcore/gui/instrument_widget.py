@@ -6,115 +6,113 @@ from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtCore as qtc
 
 from qcore.gui.ui_instrument_widget import Ui_instrument_widget
+from qcore.helpers import logger
 from qcore.instruments.instrument import Instrument, DummyInstrument, ConnectionError
 from qcore.instruments.vaunix.lms import LMS
+
 
 class InstrumentWidget(qtw.QWidget):
     """ """
 
-    def __init__(self, instrument: Instrument, *args, **kwargs) -> None:
+    name_edited = qtc.pyqtSignal(str)
+
+    def __init__(
+        self, instrument: Instrument, type: Type[Instrument] = None, *args, **kwargs
+    ) -> None:
         """ """
         super().__init__(*args, **kwargs)
 
         self.ui = Ui_instrument_widget()
         self.ui.setupUi(self)
-        self.setWindowTitle(f"{instrument}")
 
         self.instrument = instrument
-        self.fields = {"name": self.ui.name, "id": self.ui.id}
-        self.show_parameters()
+        self.instrument_type = type if type is not None else instrument.__class__
+        self.ui.type_field.setText(self.instrument_type.__name__)
+        self.ui.id_field.setText(instrument.id)
+        self.setWindowTitle(f"{self.instrument_type.__name__}#{instrument.id}")
 
+        self.fields = {"name": self.ui.name_field, "id": self.ui.id_field}
+        self.create_parameters()
+
+
+        for field in self.fields.values():
+            field.returnPressed.connect(self.configure_instrument)
+
+        self.ui.name_field.textChanged.connect(self.name_edited.emit)
         self.ui.refresh_button.clicked.connect(self.refresh_instrument)
         self.ui.connect_button.clicked.connect(self.connect_instrument)
         self.ui.disconnect_button.clicked.connect(self.disconnect_instrument)
 
+        logger.info(f"Connected instrument '{self.instrument.name}'")
         self.refresh_instrument()
 
-    def show_parameters(self):
+    def create_parameters(self):
         """ """
-        gettables = sorted(self.instrument.gettables)
-        settables = sorted(self.instrument.settables)
-        gettables.remove("status")
-        for name in settables:
+        parameters = self.instrument_type.params
+        for name, param in parameters.items():
             if name not in self.fields:
-                self.add_field(name, read_only=False)
-            self.fields[name].returnPressed.connect(self.configure_instrument)
-        for name in gettables:
-            if name not in self.fields:
-                self.add_field(name)
-
-    def add_field(self, name, read_only=True):
-        """ """
-        label = qtw.QLabel(self.ui.scroll_area_contents)
-        label.setText(name)
-        field = qtw.QLineEdit(self.ui.scroll_area_contents)
-        field.setReadOnly(read_only)
-        self.fields[name] = field
-        self.ui.p_layout.addWidget(label)
-        self.ui.p_layout.addWidget(field)
+                label = qtw.QLabel(self.ui.scroll_area_contents)
+                label.setText(name)
+                field = qtw.QLineEdit(self.ui.scroll_area_contents)
+                if param.is_settable():
+                    self.ui.settables_form.addRow(label, field)
+                elif param.is_gettable():
+                    self.ui.gettables_form.addRow(label, field)
+                    field.setReadOnly(True)
+                self.fields[name] = field
 
     def refresh_instrument(self):
         """ """
-        snapshot = self.instrument.snapshot()
-        status = snapshot.pop("status")
-        self.toggle_connection_buttons(status)
-        self.update_fields(status, snapshot)
+        snapshot, status = self.instrument.snapshot(), self.instrument.status
+        self.update_parameters(status, **snapshot)
+        logger.info(f"Updated instrument '{self.instrument.name}' parameters!!!")
 
-    def toggle_connection_buttons(self, status: bool):
+    def update_parameters(self, status: bool, **snapshot):
         """ """
-        self.ui.status_button.setChecked(status)
-        self.ui.connect_button.setDisabled(status)
-        self.ui.disconnect_button.setEnabled(status)
-
-    def update_fields(self, status: bool, snapshot: dict):
-        """ """
+        self.update_status(status)
         for field in self.fields.values():
             field.setEnabled(status)
             field.clear()
         for name, value in snapshot.items():
             self.fields[name].setText(str(value))
 
+    def update_status(self, status: bool):
+        """ """
+        status_text = "Connected" if status else "Not connected"
+        self.ui.status_field.setText(status_text)
+        self.ui.connect_button.setDisabled(status)
+        self.ui.disconnect_button.setEnabled(status)
+
     def connect_instrument(self):
         """ """
         try:
             self.instrument.connect()
         except ConnectionError as err:
-            print(f"{err}")  # TODO error logging
+            logger.error(err)  # TODO error logging
         else:
             self.refresh_instrument()
 
     def disconnect_instrument(self):
         """ """
         self.instrument.disconnect()
-        self.refresh_instrument()
+        snapshot = {"name": self.instrument.name, "id": self.instrument.id}
+        self.update_parameters(self.instrument.status, **snapshot)
 
     def configure_instrument(self):
-        """TODO INPUT VALIDATION, PARAMETER CLASS"""
-        settables = {k: v for k, v in self.fields.items() if not v.isReadOnly()}
-        parameters = dict.fromkeys(settables)
-        for name, field in settables.items():
-            setter = getattr(self.cls, name).fset
-            type_hints = get_type_hints(setter)
-            # HARD CODED AND VERY HACKY, PLEASE CHANGE THIS
-            cast = type_hints["value"] if "value" in type_hints else str
-            text = field.text()
-            if cast is bool:
-                if text.lower() in ("t", "true"):
-                    parameters[name] = True
-                elif text.lower() in ("f", "false"):
-                    parameters[name] = False
-            else:
-                try:
-                    parameters[name] = cast(text)
-                except (TypeError, ValueError):
-                    parameters[name] = text
+        """ """
+        parameters = {k: v.text() for k, v in self.fields.items() if not v.isReadOnly()}
+        # TODO GET RID OF THIS HACK WITH BETTER INPUT VALIDATION AND PARSING
+        for k, v in parameters.items():
+            if v.lower() in ("t", "true"):
+                parameters[k] = True
+            elif v.lower() in ("f", "false"):
+                parameters[k] = False
+
         try:
             self.instrument.configure(**parameters)
         except (ConnectionError, TypeError, ValueError) as err:
-            print(err)
-            pass
+            logger.error(err)
         self.refresh_instrument()
-
 
 if __name__ == "__main__":
     app = qtw.QApplication([])

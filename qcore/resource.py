@@ -56,11 +56,6 @@ class Resource(metaclass=ResourceMetaclass):
         return {k for k in self.__dict__.keys() if not k.startswith("_")}
 
     @property
-    def parameters(self) -> set[str]:
-        """ """
-        return self.__class__.params.keys() | self._attributes()
-
-    @property
     def gettables(self) -> set[str]:
         """ """
         return self._attributes() | self.__class__.gettable_params

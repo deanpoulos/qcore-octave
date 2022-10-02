@@ -9,6 +9,7 @@ from qcore.instruments.config import InstrumentConfig
 from qcore.instruments.instrument import ConnectionError
 from qcore.gui.ui_server_widget import Ui_server_widget
 import qcore.helpers.server as server
+from qcore.helpers import logger
 
 
 class SetupServerWorker(qtc.QObject):
@@ -21,7 +22,7 @@ class SetupServerWorker(qtc.QObject):
         try:
             instrument_server = server.Server(config)
         except ConnectionError as err:
-            print(f"{err}")  # TODO error logging
+            logger.error(err)  # TODO error logging
             self.server_ready.emit(False)
         else:
             self.server_ready.emit(True)
@@ -133,12 +134,14 @@ class ServerWidget(qtw.QWidget):
 
     def setup_server(self) -> None:
         """ """
+        logger.info("Setting up Server, this may take up to 10s!!!")
         self.freeze_buttons()
         self.server_requested.emit(self.config)
 
     def handle_server_ready(self, is_ready: bool) -> None:
         """ """
         if is_ready:
+            logger.info("Server is ready!!! Connecting instruments...")
             qtc.QTimer.singleShot(500, self.link_instruments)
         else:
             self.reset()
@@ -154,6 +157,7 @@ class ServerWidget(qtw.QWidget):
         self.is_serving.emit(False)
         self.server.teardown()
         self.reset()
+        logger.info("Tore down Server!!!")
 
 
 if __name__ == "__main__":

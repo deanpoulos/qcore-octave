@@ -29,7 +29,7 @@ class Instrument(Resource):
     @id.getter
     def id(self) -> str:
         """ """
-        return self._id
+        return str(self._id)
 
     @property
     def status(self) -> bool:
@@ -54,7 +54,7 @@ class Instrument(Resource):
         """ """
         if not self.status:
             logger.warning(f"{self} is disconnected, returning a minimal snapshot.")
-            return {"id": self.id, "name": self.name, "status": False}
+            return {"id": self.id, "name": self.name}
         return super().snapshot()
 
 
@@ -92,9 +92,3 @@ class DummyInstrument(Instrument):
     @settable.setter
     def settable(self, value: int) -> None:
         self._settable = value
-
-
-if __name__ == "__main__":
-    obj = DummyInstrument(name="d", id="0")
-    print(DummyInstrument.settable.type)
-    print(type(obj))

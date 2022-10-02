@@ -26,9 +26,9 @@ def to_frequency(value: int) -> float:
     return value * UNIT_FREQUENCY
 
 
-def from_frequency(value: int) -> int:
+def from_frequency(value: float) -> int:
     """Convert frequency to LMS coded frequency"""
-    return int(value / UNIT_FREQUENCY)
+    return int(float(value) / UNIT_FREQUENCY)
 
 
 def check_power(value: float, lms: LMS) -> bool:
@@ -45,7 +45,7 @@ def to_power(value: int) -> float:
 
 def from_power(value: float) -> int:
     """Convert actual power to LMS encoded power"""
-    return int(value / UNIT_POWER)
+    return int(float(value) / UNIT_POWER)
 
 
 class LMS(Instrument):
