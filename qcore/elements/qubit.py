@@ -1,11 +1,11 @@
 """ """
 
-from qcore.elements.mode import Mode
+from qcore.elements.element import Element
 from qcore.pulses.ramped_constant_pulse import ConstantPulse
 from qcore.pulses.gaussian_pulse import GaussianPulse
 
 
-class Qubit(Mode):
+class Qubit(Element):
     """ """
 
     def __init__(self, **parameters) -> None:

@@ -6,7 +6,7 @@ from typing import Any
 from labctrl.logger import logger
 import numpy as np
 
-from qcore.elements.mode import Mode
+from qcore.elements.element import Element
 from qcore.elements.readout import Readout
 from qcore.instruments.vaunix.lms import LMS
 from qcore.pulses.digital_waveform import DigitalWaveform
@@ -50,7 +50,7 @@ class QMConfig(defaultdict):
         """ """
         self["version"] = 1
 
-    def set_ports(self, mode: Mode) -> None:
+    def set_ports(self, mode: Element) -> None:
         """ """
         self.set_controllers()
         ports = mode.ports
@@ -71,7 +71,7 @@ class QMConfig(defaultdict):
         self["elements"][name]["mixInputs"]["lo_frequency"] = lo_freq
         logger.debug(f"Set {name} {lo_freq = }.")
 
-    def set_mixer(self, mode: Mode, int_freq: float, lo_freq: float) -> None:
+    def set_mixer(self, mode: Element, int_freq: float, lo_freq: float) -> None:
         """ """
         ports, offsets = mode.ports, mode.mixer_offsets
         mixer_name = f"mixer_{ports['I']}{ports['Q']}"
@@ -108,7 +108,7 @@ class QMConfig(defaultdict):
         self["elements"][name]["smearing"] = smearing
         logger.debug(f"Set {name} {smearing = }.")
 
-    def set_operations(self, mode: Mode) -> None:
+    def set_operations(self, mode: Element) -> None:
         """ """
         ops = mode.operations
         for op in ops:
@@ -174,7 +174,7 @@ class QMConfig(defaultdict):
         """ """
         self["controllers"][QMConfig.CONTROLLER_NAME]["type"] = "opx1"
 
-    def set_controller_port(self, mode: Mode, port_key: str, port_num: int) -> None:
+    def set_controller_port(self, mode: Element, port_key: str, port_num: int) -> None:
         """ """
         dc_offset = mode.mixer_offsets[port_key]
         self.check_voltage_bounds(dc_offset, "DC offset voltage")
@@ -211,7 +211,7 @@ class QMConfig(defaultdict):
         controllers_config["digital_outputs"][number] = {}
         logger.debug(f"Set controller digital output port {number = }.")
 
-    def set_element_port(self, mode: Mode, key: str, number: int) -> None:
+    def set_element_port(self, mode: Element, key: str, number: int) -> None:
         """ """
         if key not in Readout.PORTS_KEYS:
             raise ValueError(f"Invalid port {key = }, must be in {Readout.PORTS_KEYS}.")
@@ -336,10 +336,10 @@ class QMConfigBuilder:
     def __init__(self) -> None:
         """ """
         self._config: QMConfig = None  # built by build_config()
-        self._modes: tuple[Mode] = None
+        self._modes: tuple[Element] = None
         self._lo_frequencies: dict[str, float] = {}
 
-    def build_config(self, modes: tuple[Mode], los: tuple[LMS]) -> QMConfig:
+    def build_config(self, modes: tuple[Element], los: tuple[LMS]) -> QMConfig:
         """ """
         try:
             self._check_modes(*modes)
@@ -375,12 +375,12 @@ class QMConfigBuilder:
 
             config.set_operations(mode)
 
-    def _check_modes(self, *modes: Mode) -> None:
+    def _check_modes(self, *modes: Element) -> None:
         """ """
         mode_names = []
         for mode in modes:
-            if not isinstance(mode, Mode):
-                message = f"Invalid {mode = }, must be of {Mode}."
+            if not isinstance(mode, Element):
+                message = f"Invalid {mode = }, must be of {Element}."
                 raise QMConfigBuildingError(message)
             name = mode.name
             if name in mode_names:

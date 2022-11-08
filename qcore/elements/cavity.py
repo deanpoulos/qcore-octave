@@ -1,11 +1,11 @@
 """ """
 
-from qcore.elements.mode import Mode
+from qcore.elements.element import Element
 from qcore.pulses.ramped_constant_pulse import RampedConstantPulse
 from qcore.pulses.gaussian_pulse import GaussianPulse
 
 
-class Cavity(Mode):
+class Cavity(Element):
     """ """
 
     def __init__(self, **parameters) -> None:
