@@ -17,6 +17,11 @@ from qcore.helpers import server
 import qcore.helpers.yamlizer as yml
 from qcore.resource import Resource
 
+# these imports are needed for yamlizing to work
+from qcore.elements import *
+from qcore.instruments import *
+from qcore.pulses import *
+
 
 class Stage:
     """ """
@@ -40,6 +45,7 @@ class Stage:
 
         # _config is a dict with key: configpath, value: list[Resource] used for saving
         self._config: dict[Path, list[Resource]] = {self._configpath: []}
+
         # _resources is a dict with key: resource name and
         # value: Resource object for local and Resource proxy for remote resources
         self._resources: dict[str, Union[Resource, pyro.Proxy]] = {}
@@ -51,7 +57,7 @@ class Stage:
         if remote:
             self._link()
 
-        logger.debug(f"Set up a Stage with {configpath = } and {remote = }...")
+        logger.debug(f"Set up a Stage with {remote = }")
 
     def _link(self) -> None:
         """ """
@@ -78,9 +84,9 @@ class Stage:
 
     def save(self) -> None:
         """ """
-        logger.debug(f"Saving the state of staged resources to their configs...")
         for configpath, resources in self._config.items():
-            if resources:
+            if resources and configpath is not None:
+                logger.debug(f"Saving state of staged resources to their configs...")
                 yml.dump(configpath, *resources)
 
     @property
@@ -139,7 +145,7 @@ class Stage:
         resources = []
         for name in names:
             if name in self._resources:
-                resources.append[self._resources[name]]
+                resources.append(self._resources[name])
             else:
                 logger.warning(f"Resource with {name = } does not exist on this stage.")
         return resources
