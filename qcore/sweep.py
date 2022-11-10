@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import numpy as np
 
-class Sweep:
+from qcore.expvariable import ExpVar
+
+class Sweep(ExpVar):
     """ """
 
     def __init__(
         self,
+        var_type: type,    # type of sweep variable
         name: str = None,  # name of sweep variable
         units: str = None,  # units attribute sweep points dataset is saved with
         dtype: str = "f4",  # dtype used to save sweep points dataset
@@ -22,6 +25,7 @@ class Sweep:
         kind: str = "lin",  # "lin" or "log" (base 10) sweep
     ) -> None:
         """ """
+        super().__init__(name, var_type)
         self.name = name
         self.units = units
         self.dtype = dtype
