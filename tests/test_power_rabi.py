@@ -1,15 +1,17 @@
 """ Let's write a functioning Power Rabi script with the new class organization """
 
+from pathlib import Path
 import pprint
 
 from qcore.elements import Qubit, Readout
+from qcore.helpers.stage import Stage
 from qcore.instruments import QM
 from qcore.pulses import ConstantPulse, GaussianPulse
 
 if __name__ == "__main__":
 
     # initialize a Qubit element
-    qubit = Qubit(
+    QUBIT = Qubit(
         name="QUBIT",
         lo_name="LB_QUBIT",
         ports={"I": 1, "Q": 2},
@@ -21,16 +23,21 @@ if __name__ == "__main__":
     )
 
     # initialize a Readout element
-    readout = Readout(
+    READOUT = Readout(
         name="RR",
         lo_name="RR_QUBIT",
         ports={"I": 3, "Q": 4, "out": 1},
         int_freq=-50e6,
     )
 
+    resources = [QUBIT, READOUT]
+    configpath = Path.cwd() / "config/test_power_rabi.yml"
+    with Stage(*resources, configpath=configpath, remote=False) as stage:
+        qubit, readout = stage.get("QUBIT", "RR")
+
     pprint.pp(qubit.snapshot())
-    
-    pprint.pp(readout.snapshot())
+
+    # pprint.pp(readout.snapshot())
 
     # assemble your device here
     # Device()
