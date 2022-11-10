@@ -1,7 +1,5 @@
 """ """
 
-from labctrl.logger import logger
-
 from qcore.resource import Resource
 
 from qcore.parameter import Parameter

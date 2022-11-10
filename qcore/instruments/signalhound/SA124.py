@@ -3,7 +3,6 @@
 from ctypes import CDLL, byref, c_char_p, c_double, c_int
 from pathlib import Path
 
-from labctrl.logger import logger
 import numpy as np
 
 from qcore.instruments.instrument import Instrument, ConnectionError

@@ -3,7 +3,6 @@
 from collections import defaultdict
 from typing import Any
 
-from labctrl.logger import logger
 import numpy as np
 
 from qcore.elements.element import Element
