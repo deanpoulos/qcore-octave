@@ -6,7 +6,7 @@ from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtCore as qtc
 
 from qcore.gui.ui_instrument_widget import Ui_instrument_widget
-from qcore.helpers import logger
+from qcore.helpers.logger import logger
 from qcore.instruments.instrument import Instrument, DummyInstrument, ConnectionError
 from qcore.instruments.vaunix.lms import LMS
 

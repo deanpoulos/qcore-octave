@@ -9,7 +9,7 @@ from qcore.instruments.config import InstrumentConfig
 from qcore.instruments.instrument import ConnectionError
 from qcore.gui.ui_server_widget import Ui_server_widget
 import qcore.helpers.server as server
-from qcore.helpers import logger
+from qcore.helpers.logger import logger
 
 
 class SetupServerWorker(qtc.QObject):

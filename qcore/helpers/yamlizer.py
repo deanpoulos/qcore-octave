@@ -10,7 +10,7 @@ from typing import Any, Type
 import numpy as np
 import yaml
 
-from qcore.helpers import logger
+from qcore.helpers.logger import logger
 from qcore.resource import Resource
 
 

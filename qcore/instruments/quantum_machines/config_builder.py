@@ -7,7 +7,7 @@ import numpy as np
 
 from qcore.elements.element import Element
 from qcore.elements.readout import Readout
-from qcore.helpers import logger
+from qcore.helpers.logger import logger
 from qcore.instruments.vaunix.lms import LMS
 from qcore.pulses.digital_waveform import DigitalWaveform
 from qcore.pulses.pulse import Pulse

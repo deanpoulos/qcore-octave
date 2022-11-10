@@ -1,8 +1,8 @@
 """ """
 
-from qcore.resource import Resource
-
+from qcore.helpers.logger import logger
 from qcore.parameter import Parameter
+from qcore.resource import Resource
 
 
 class ConnectionError(Exception):

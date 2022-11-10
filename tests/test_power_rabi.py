@@ -1,5 +1,7 @@
 """ Let's write a functioning Power Rabi script with the new class organization """
 
+import pprint
+
 from qcore.elements import Qubit, Readout
 from qcore.instruments import QM
 from qcore.pulses import ConstantPulse, GaussianPulse
@@ -26,6 +28,10 @@ if __name__ == "__main__":
         int_freq=-50e6,
     )
 
+    pprint.pp(qubit.snapshot())
+    
+    pprint.pp(readout.snapshot())
+
     # assemble your device here
     # Device()
     # initialize elements Qubit()
@@ -40,21 +46,3 @@ if __name__ == "__main__":
     # run ur experiment and get raw data
     # optional analysis fn where you can plot
     #
-
-
-class Experiment:
-
-    repetions = 3
-    delay = 15
-    power = (1, 10, 1)
-    ...
-
-    def sequence():
-        """ """
-
-    def datasets():
-        """ """
-        raw = Dataset(axes=(power, reps, freq))
-
-    def analysis():
-        """ """
