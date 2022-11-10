@@ -3,11 +3,11 @@
 from collections import defaultdict
 from typing import Any
 
-from labctrl.logger import logger
 import numpy as np
 
 from qcore.elements.element import Element
 from qcore.elements.readout import Readout
+from qcore.helpers.logger import logger
 from qcore.instruments.vaunix.lms import LMS
 from qcore.pulses.digital_waveform import DigitalWaveform
 from qcore.pulses.pulse import Pulse

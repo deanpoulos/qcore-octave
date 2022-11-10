@@ -6,7 +6,7 @@ from PyQt5 import QtCore as qtc
 from qcore.gui.instrument_widget import InstrumentWidget
 from qcore.gui.server_widget import ServerWidget
 from qcore.gui.ui_verse import Ui_verse
-from qcore.helpers import logger
+from qcore.helpers.logger import logger
 
 class Verse(qtw.QWidget):
     """ """

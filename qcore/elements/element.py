@@ -1,8 +1,7 @@
 """ """
 
-from labctrl.logger import logger
-
 from qcore.elements.rf_switch import RFSwitch
+from qcore.helpers.logger import logger
 from qcore.pulses.pulse import Pulse
 from qcore.pulses.digital_waveform import DigitalWaveform
 from qcore.pulses.readout_pulse import ReadoutPulse
@@ -46,11 +45,11 @@ class Element(Resource):
         """ """
         try:
             for key in value.keys():
-                if key not in Element.PORTS_KEYS:
-                    message = f"Invalid port {key = }, valid keys: {Element.PORTS_KEYS}."
+                if key not in self.PORTS_KEYS:
+                    message = f"Invalid port {key = }, valid keys: {self.PORTS_KEYS}."
                     raise KeyError(message)
         except (AttributeError, TypeError):
-            message = f"Expect {dict[str, int]} with keys: {Element.PORTS_KEYS}."
+            message = f"Expect {dict[str, int]} with keys: {self.PORTS_KEYS}."
             raise ValueError(message) from None
 
         if value:
@@ -71,11 +70,11 @@ class Element(Resource):
         """ """
         try:
             for key in value.keys():
-                if key not in Element.OFFSETS_KEYS:
-                    msg = f"Invalid {key = }, valid offset keys: {Element.OFFSETS_KEYS}."
+                if key not in self.OFFSETS_KEYS:
+                    msg = f"Invalid {key = }, valid offset keys: {self.OFFSETS_KEYS}."
                     raise KeyError(msg)
         except (AttributeError, TypeError):
-            message = f"Expect {dict[str, float]} with keys: {Element.OFFSETS_KEYS}."
+            message = f"Expect {dict[str, float]} with keys: {self.OFFSETS_KEYS}."
             raise ValueError(message) from None
 
         if value:
@@ -106,7 +105,7 @@ class Element(Resource):
         if self._rf_switch is not None:
             for operation in self._operations:
                 if not isinstance(operation, ReadoutPulse):
-                    marker = DigitalWaveform(Element.RF_SWITCH_DIGITAL_MARKER)
+                    marker = DigitalWaveform(self.RF_SWITCH_DIGITAL_MARKER)
                     operation.digital_marker = marker if value else None
             self._rf_switch_on = bool(value)
 

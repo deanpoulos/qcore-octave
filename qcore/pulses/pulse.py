@@ -2,7 +2,7 @@
 
 from typing import Union
 
-from labctrl.logger import logger
+from qcore.helpers.logger import logger
 
 from qcore.pulses.digital_waveform import DigitalWaveform
 from qcore.resource import Resource

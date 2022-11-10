@@ -173,7 +173,7 @@ class ResonatorSpectroscopy(Experiment):
         while count < self.N:
             print(f"Experiment repetition count {count} of {self.N}...")
             # get data batch with random reps that are some fraction of total reps
-            reps = np.random.randint(low=1, high=int(self.N * 0.2) + 1)
+            reps = np.random.randint(low=1, high=int(self.N * 0.1) + 1)
             if count + reps >= self.N:  # ensure we don't exceed total no. of reps
                 reps = self.N - count
             new_count = count + reps
@@ -185,6 +185,11 @@ class ResonatorSpectroscopy(Experiment):
 
     def handle_data(self, data: np.ndarray, count: int, reps: int) -> None:
         """ """
+        # custom transformations which are experiment specfic
+        
+        
+        #super().handle_data(data)
+        
         self.s21.data = data
 
         s21_avg = np.average(data, axis=0)
@@ -306,10 +311,10 @@ if __name__ == "__main__":
     """ """
 
     parameters = {
-        "N": 100,
+        "N": 1000,
         "wait": 1,  # between successive repetitions
-        "freqs": Sweep(start=4.95e9, stop=5.05e9, num=1001, endpoint=True),
+        "freqs": Sweep(start=4.975e9, stop=5.025e9, num=1001, endpoint=True),
     }
     expt = ResonatorSpectroscopy(**parameters)
-    to_plot = (expt.s21_avg, expt.s21_mlog, expt.s21_arg)
+    to_plot = (expt.s21_mlog, expt.s21_arg)
     expt.run(save=False, plot=to_plot)

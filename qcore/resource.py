@@ -3,6 +3,7 @@
 import inspect
 from typing import Any
 
+import qcore.helpers.yamlizer as yml
 from qcore.parameter import Parameter
 
 
@@ -16,7 +17,10 @@ class ResourceMetaclass(type):
         # find the parameters (gettable and settable) of the Resource class
         mro = inspect.getmro(cls)  # mro means method resolution order
         cls.params = {
-            k: v for c in mro for k, v in c.__dict__.items() if isinstance(v, Parameter)
+            key: value
+            for cls in mro
+            for key, value in cls.__dict__.items()
+            if isinstance(value, (Parameter, property))
         }
         cls.gettable_params = {k for k, v in cls.params.items() if v.fget is not None}
         cls.settable_params = {k for k, v in cls.params.items() if v.fset is not None}
@@ -33,6 +37,7 @@ class Resource(metaclass=ResourceMetaclass):
 
     def __init__(self, name: str, **parameters) -> None:
         """ """
+        yml.register(self.__class__)
         self._name = str(name)
         if parameters:  # set parameters with values supplied by the user, if available
             self.configure(**parameters)
@@ -55,23 +60,38 @@ class Resource(metaclass=ResourceMetaclass):
         """ """
         return {k for k in self.__dict__.keys() if not k.startswith("_")}
 
-    @property
     def gettables(self) -> set[str]:
         """ """
         return self._attributes() | self.__class__.gettable_params
 
-    @property
     def settables(self) -> set[str]:
         """ """
         return self._attributes() | self.__class__.settable_params
 
     def configure(self, **parameters) -> None:
         """ """
-        settables = self.settables
+        settables = self.settables()
         for name, value in parameters.items():
             if name in settables:
                 setattr(self, name, value)
 
     def snapshot(self) -> dict[str, Any]:
-        """ """
-        return {name: getattr(self, name) for name in sorted(self.gettables)}
+        """ flattened deserialized nested dictionary """
+        snapshot = {}
+        keys = sorted(self.gettables())
+        keys.remove("name")
+        keys.insert(0, "name")
+        for key in keys:
+            if hasattr(self, key):
+                value = getattr(self, key)
+                snapshot[key] = self._snapshot(value)
+        return snapshot
+
+    def _snapshot(self, value: Any) -> Any:
+        """  """
+        if isinstance(value, (list, tuple, set)):
+            return [self._snapshot(v) for v in value]
+        if isinstance(value, dict):
+            return {k: self._snapshot(v) for k, v in value.items()}
+        else:
+            return value

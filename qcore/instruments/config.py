@@ -1,4 +1,4 @@
-""" """
+""" QCREW's instrument config, a catalogue of all programmable instruments and their types and serial numbers """
 
 from qcore.instruments import *
 

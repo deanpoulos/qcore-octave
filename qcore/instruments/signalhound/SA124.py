@@ -3,9 +3,9 @@
 from ctypes import CDLL, byref, c_char_p, c_double, c_int
 from pathlib import Path
 
-from labctrl.logger import logger
 import numpy as np
 
+from qcore.helpers.logger import logger
 from qcore.instruments.instrument import Instrument, ConnectionError
 
 SA = CDLL(str(Path(__file__).parent / "sa124.dll"))
