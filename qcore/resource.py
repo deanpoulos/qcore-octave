@@ -76,19 +76,14 @@ class Resource(metaclass=ResourceMetaclass):
                 setattr(self, name, value)
 
     def snapshot(self) -> dict[str, Any]:
-        """ flattened deserialized nested dictionary """
-        snapshot = {}
+        """flattened deserialized nested dictionary"""
         keys = sorted(self.gettables())
         keys.remove("name")
         keys.insert(0, "name")
-        for key in keys:
-            if hasattr(self, key):
-                value = getattr(self, key)
-                snapshot[key] = self._snapshot(value)
-        return snapshot
+        return {key: getattr(self, key) for key in keys if hasattr(self, key)}
 
     def _snapshot(self, value: Any) -> Any:
-        """  """
+        """ """
         if isinstance(value, (list, tuple, set)):
             return [self._snapshot(v) for v in value]
         if isinstance(value, dict):
