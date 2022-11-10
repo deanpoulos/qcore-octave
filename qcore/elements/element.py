@@ -28,7 +28,7 @@ class Element(Resource):
         self.int_freq: float = int_freq
 
         self._ports: dict[str, int] = dict.fromkeys(Element.PORTS_KEYS)
-        self._mixer_offsets: dict[str, float] = dict.fromkeys(Element.OFFSETS_KEYS, 0.0)
+        self._mixer_offsets: dict[str, float] = dict.fromkeys(self.OFFSETS_KEYS, 0.0)
         self._rf_switch: RFSwitch = None
         self._rf_switch_on: bool = False
         self._operations: list[Pulse] = []

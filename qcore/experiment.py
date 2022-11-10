@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from qcore.instruments import QM
 
 class Experiment():
@@ -32,3 +33,11 @@ class Experiment():
 
 
 
+=======
+""" """
+
+from qcore.resource import Resource
+
+class Experiment(Resource):
+    """ """
+>>>>>>> a24071c6f752c8a5b4f334ec8ef6189a1bdadf3c

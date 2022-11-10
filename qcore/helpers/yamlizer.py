@@ -11,11 +11,6 @@ import numpy as np
 import yaml
 
 from qcore.helpers.logger import logger
-import qcore.resource as qcr
-
-
-class YamlRegistrationError(Exception):
-    """Raised if user tries to register a non-Resource class object with yamlizer."""
 
 
 class _YamlRegistrar:
@@ -42,15 +37,7 @@ def register(cls) -> None:
     """Registers a Resource class with yamlizer for safe loading (dumping).
 
     Args:
-        cls (Type[qcr.Resource]): Resource class to be registered with yamlizer.
-
-    Raises:
-        YamlRegistrationError: If `cls` is not a Resource class."""
-
-    if not issubclass(cls, qcr.Resource):
-        message = f"Only Resource class(es) can be registered, not {cls}."
-        logger.error(message)
-        raise YamlRegistrationError(message)
+        cls (Type[qcr.Resource]): Resource class to be registered with yamlizer."""
 
     yamltag = cls.__name__
 
@@ -103,50 +90,13 @@ def _represent(dumper: yaml.SafeDumper, resource) -> yaml.MappingNode:
 
 def load(configpath: Path):
     """returns a list of Resource objects by reading a YAML file"""
-    try:
-        with open(configpath, mode="r") as config:
-            logger.debug(f"Loading resources from '{configpath.stem}'...")
-            return yaml.safe_load(config)
-    except IOError:
-        message = (
-            f"Unable to load resources from a file at {configpath = }. "
-            f"You may have specified an invalid path."
-        )
-        logger.error(message)
-        raise
-    except AttributeError:
-        message = (
-            f"Failed to load a labctrl resource from {configpath}. "
-            f"An entry in {configpath.name} may have an invalid attribute (key)."
-        )
-        logger.error(message)
-        raise
-    except yaml.YAMLError:
-        message = (
-            f"Failed to identify and load labctrl resources from {configpath}. "
-            f"Config '{configpath.name}' may have an invalid or unrecognized yaml tag."
-        )
-        logger.error(message)
-        raise
+    with open(configpath, mode="r") as config:
+        logger.debug(f"Loading resources from '{configpath.name}'...")
+        return yaml.safe_load(config)
 
 
 def dump(configpath: Path, *resources) -> None:
     """saves a collection of Resource objects to given .yml configpath"""
-    try:
-        with open(configpath, mode="w+") as config:
-            logger.debug(f"Dumping resources to '{configpath.stem}'...")
-            yaml.safe_dump(resources, config)
-    except IOError:
-        message = (
-            f"Unable to save resources to a file at {configpath = }. "
-            f"You may have specified an invalid path."
-        )
-        logger.error(message)
-        raise
-    except yaml.YAMLError:
-        message = (
-            f"Failed to save labctrl resources to {configpath}. "
-            f"You may have supplied an invalid or unrecognized Resource class."
-        )
-        logger.error(message)
-        raise
+    with open(configpath, mode="w+") as config:
+        logger.debug(f"Dumping resources to '{configpath.name}'...")
+        yaml.safe_dump(resources, config, sort_keys=False)

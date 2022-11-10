@@ -13,6 +13,7 @@ class ResourceMetaclass(type):
     def __init__(cls, name, bases, kwds) -> None:
         """ """
         super().__init__(name, bases, kwds)
+        yml.register(cls)
 
         # find the parameters (gettable and settable) of the Resource class
         mro = inspect.getmro(cls)  # mro means method resolution order
@@ -37,7 +38,6 @@ class Resource(metaclass=ResourceMetaclass):
 
     def __init__(self, name: str, **parameters) -> None:
         """ """
-        yml.register(self.__class__)
         self._name = str(name)
         if parameters:  # set parameters with values supplied by the user, if available
             self.configure(**parameters)
@@ -76,19 +76,14 @@ class Resource(metaclass=ResourceMetaclass):
                 setattr(self, name, value)
 
     def snapshot(self) -> dict[str, Any]:
-        """ flattened deserialized nested dictionary """
-        snapshot = {}
+        """flattened deserialized nested dictionary"""
         keys = sorted(self.gettables())
         keys.remove("name")
         keys.insert(0, "name")
-        for key in keys:
-            if hasattr(self, key):
-                value = getattr(self, key)
-                snapshot[key] = self._snapshot(value)
-        return snapshot
+        return {key: getattr(self, key) for key in keys if hasattr(self, key)}
 
     def _snapshot(self, value: Any) -> Any:
-        """  """
+        """ """
         if isinstance(value, (list, tuple, set)):
             return [self._snapshot(v) for v in value]
         if isinstance(value, dict):

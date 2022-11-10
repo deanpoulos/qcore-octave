@@ -228,7 +228,9 @@ class QMConfig(defaultdict):
             raise ValueError(f"Invalid port {key = } and {number = } for {mode}.")
         logger.debug(f"Set '{mode.name}' port {key = } and {number = }.")
 
-    def get_correction_matrix(g: float, p: float) -> list[float, float, float, float]:
+    def get_correction_matrix(
+        self, g: float, p: float
+    ) -> list[float, float, float, float]:
         """ """
         try:
             cos, sin = np.cos(p), np.sin(p)
@@ -261,7 +263,7 @@ class QMConfig(defaultdict):
         digital_marker = pulse.digital_marker
         if digital_marker is not None:
             marker_name = pulse_name + "." + digital_marker.name
-            pulse_config["digital_markers"] = marker_name
+            pulse_config["digital_marker"] = marker_name
             self.set_digital_waveform(digital_marker, marker_name)
 
         if pulse_type == "measurement" and pulse.has_mixed_waveforms():
@@ -370,7 +372,7 @@ class QMConfigBuilder:
                 config.set_mixer(mode, mode.int_freq, lo_freq)
 
             if isinstance(mode, Readout):
-                config.set_time_of_flight(mode.name, mode.tof)
+                config.set_time_of_flight(mode.name, mode.time_of_flight)
                 config.set_smearing(mode.name, mode.smearing)
 
             config.set_operations(mode)
