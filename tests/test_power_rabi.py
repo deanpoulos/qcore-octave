@@ -10,34 +10,15 @@ from qcore.pulses import ConstantPulse, GaussianPulse
 
 if __name__ == "__main__":
 
-    # initialize a Qubit element
-    QUBIT = Qubit(
-        name="QUBIT",
-        lo_name="LB_QUBIT",
-        ports={"I": 1, "Q": 2},
-        int_freq=-50e6,
-        operations=[
-            ConstantPulse(name="saturation_pulse", length=5000, I_ampx=1.0, Q_ampx=0.0),
-            GaussianPulse(name="gaussian_pulse", sigma=200, chop=6, I_ampx=1.0),
-        ],
-    )
+    configfolder = Path.cwd() / "config/myproject"
+    configfiles = ["readout.yml", "instruments.yml"]
+    configpaths = [configfolder / configfile for configfile in configfiles]
 
-    # initialize a Readout element
-    READOUT = Readout(
-        name="RR",
-        lo_name="RR_QUBIT",
-        ports={"I": 3, "Q": 4, "out": 1},
-        int_freq=-50e6,
-    )
-
-    resources = [QUBIT, READOUT]
-    configpath = Path.cwd() / "config/test_power_rabi.yml"
-    with Stage(*resources, configpath=configpath, remote=False) as stage:
-        qubit, readout = stage.get("QUBIT", "RR")
-
-    pprint.pp(qubit.snapshot())
-
-    # pprint.pp(readout.snapshot())
+    with Stage(*configpaths, remote=False) as stage:
+        readout, lo_rr = stage.get("RR", "LO_RR")
+        qm = QM(elements=(readout,), oscillators=(lo_rr,))
+        pprint.pp(qm.snapshot())
+        pprint.pp(qm.get_config())
 
     # assemble your device here
     # Device()
