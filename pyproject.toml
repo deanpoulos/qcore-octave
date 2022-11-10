@@ -8,13 +8,13 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.9,<3.11"
 PyVISA = "^1.12.0"
-qm-qua = "^1.0.0"
 PyQt5 = "5.15.4"
 Pyro5 = "^5.13.1"
 loguru = "^0.6.0"
 pyqtgraph = "^0.13.1"
 h5py = "^3.7.0"
 PyYAML = "^6.0"
+qm-qua = "^1.0.1"
 
 [tool.poetry.group.dev.dependencies]
 pyqt5-tools = "^5.15.4.3.2"
