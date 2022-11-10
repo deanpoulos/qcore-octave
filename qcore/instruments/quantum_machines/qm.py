@@ -1,5 +1,7 @@
 """ """
 
+import numpy as np
+
 from qm.QuantumMachine import QuantumMachine
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.QmJob import QmJob
@@ -8,6 +10,7 @@ from qm.qua._dsl import _ProgramScope
 from qcore.helpers.logger import logger
 from qcore.instruments.instrument import Instrument, ConnectionError
 from qcore.instruments.quantum_machines.config_builder import QMConfigBuilder, QMConfig
+from qcore.instruments.quantum_machines.result_fetcher import QMResultFetcher
 from qcore.instruments.vaunix.lms import LMS
 from qcore.elements.element import Element
 
@@ -28,6 +31,9 @@ class QM(Instrument):
 
         self._elements: tuple[Element] = elements
         self._oscillators: tuple[LMS] = oscillators
+        
+        self._job: QmJob = None
+        self._qrf: QMResultFetcher = None
 
         super().__init__(id=None, name="QM")
 
@@ -70,10 +76,19 @@ class QM(Instrument):
         """ """
         return self._status
 
-    def execute(self, qua_program: _ProgramScope) -> QmJob:
+    def execute(self, qua_program: _ProgramScope) -> None:
         """ """
         if self._config is None or self._qm is None:
             logger.warning("Can't execute program, QM hasn't been opened with a config")
         else:
             # TODO error handling, if exception, set status = False, else set True
-            return self._qm.execute(qua_program)
+            self._job = self._qm.execute(qua_program)
+            self._qrf = QMResultFetcher(self._job.result_handles)
+
+    def is_processing(self) -> bool:
+        """ """
+        return self._qrf.is_done_fetching
+
+    def fetch(self) -> dict[str, np.ndarray]:
+        """ """
+        return self._qrf.fetch()
