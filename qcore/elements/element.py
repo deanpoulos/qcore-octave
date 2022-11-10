@@ -9,7 +9,7 @@ from qcore.pulses.readout_pulse import ReadoutPulse
 from qcore.resource import Resource
 
 
-class Mode(Resource):
+class Element(Resource):
     """ """
 
     PORTS_KEYS = ("I", "Q")
@@ -28,8 +28,8 @@ class Mode(Resource):
         self.lo_name: str = str(lo_name)
         self.int_freq: float = int_freq
 
-        self._ports: dict[str, int] = dict.fromkeys(Mode.PORTS_KEYS)
-        self._mixer_offsets: dict[str, float] = dict.fromkeys(Mode.OFFSETS_KEYS, 0.0)
+        self._ports: dict[str, int] = dict.fromkeys(Element.PORTS_KEYS)
+        self._mixer_offsets: dict[str, float] = dict.fromkeys(Element.OFFSETS_KEYS, 0.0)
         self._rf_switch: RFSwitch = None
         self._rf_switch_on: bool = False
         self._operations: list[Pulse] = []
@@ -46,11 +46,11 @@ class Mode(Resource):
         """ """
         try:
             for key in value.keys():
-                if key not in Mode.PORTS_KEYS:
-                    message = f"Invalid port {key = }, valid keys: {Mode.PORTS_KEYS}."
+                if key not in Element.PORTS_KEYS:
+                    message = f"Invalid port {key = }, valid keys: {Element.PORTS_KEYS}."
                     raise KeyError(message)
         except (AttributeError, TypeError):
-            message = f"Expect {dict[str, int]} with keys: {Mode.PORTS_KEYS}."
+            message = f"Expect {dict[str, int]} with keys: {Element.PORTS_KEYS}."
             raise ValueError(message) from None
 
         if value:
@@ -71,11 +71,11 @@ class Mode(Resource):
         """ """
         try:
             for key in value.keys():
-                if key not in Mode.OFFSETS_KEYS:
-                    msg = f"Invalid {key = }, valid offset keys: {Mode.OFFSETS_KEYS}."
+                if key not in Element.OFFSETS_KEYS:
+                    msg = f"Invalid {key = }, valid offset keys: {Element.OFFSETS_KEYS}."
                     raise KeyError(msg)
         except (AttributeError, TypeError):
-            message = f"Expect {dict[str, float]} with keys: {Mode.OFFSETS_KEYS}."
+            message = f"Expect {dict[str, float]} with keys: {Element.OFFSETS_KEYS}."
             raise ValueError(message) from None
 
         if value:
@@ -106,7 +106,7 @@ class Mode(Resource):
         if self._rf_switch is not None:
             for operation in self._operations:
                 if not isinstance(operation, ReadoutPulse):
-                    marker = DigitalWaveform(Mode.RF_SWITCH_DIGITAL_MARKER)
+                    marker = DigitalWaveform(Element.RF_SWITCH_DIGITAL_MARKER)
                     operation.digital_marker = marker if value else None
             self._rf_switch_on = bool(value)
 

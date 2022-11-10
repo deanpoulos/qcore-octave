@@ -8,7 +8,7 @@ from qm.qua._dsl import _ProgramScope
 from qcore.instruments.instrument import Instrument, ConnectionError
 from qcore.instruments.quantum_machines.config_builder import QMConfigBuilder, QMConfig
 from qcore.instruments.vaunix.lms import LMS
-from qcore.elements.mode import Mode
+from qcore.elements.element import Element
 
 
 class QM(Instrument):
@@ -59,7 +59,7 @@ class QM(Instrument):
     def execute(
         self,
         qua_program: _ProgramScope,
-        modes: tuple[Mode],
+        modes: tuple[Element],
         local_oscillators: tuple[LMS],
     ) -> QmJob:
         """ """
