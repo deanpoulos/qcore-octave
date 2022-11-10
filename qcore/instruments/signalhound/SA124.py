@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 
+from qcore.helpers import logger
 from qcore.instruments.instrument import Instrument, ConnectionError
 
 SA = CDLL(str(Path(__file__).parent / "sa124.dll"))
