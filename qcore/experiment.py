@@ -1,5 +1,6 @@
-<<<<<<< HEAD
 from qcore.instruments import QM
+from qcore.helpers.datasaver import Datasaver
+from qcore.helpers.plotter import Plotter
 
 class Experiment():
     """
@@ -11,8 +12,11 @@ class Experiment():
 
     def init_variables(self):
         raise NotImplementedError
+    
+    def process_streams(self):
+        raise NotImplementedError
 
-    def pulse_sequence(self):
+    def construct_pulse_sequence(self):
         raise NotImplementedError
 
     def run(self, save, plot, qm:QM):
@@ -25,7 +29,7 @@ class Experiment():
         if plot:
             self.plotter = Plotter(self.wait, *plot)
 
-        qm.execute()
+        qm.execute(self)
 
         while qm.is_processing():
             ...
@@ -33,11 +37,3 @@ class Experiment():
 
 
 
-=======
-""" """
-
-from qcore.resource import Resource
-
-class Experiment(Resource):
-    """ """
->>>>>>> a24071c6f752c8a5b4f334ec8ef6189a1bdadf3c

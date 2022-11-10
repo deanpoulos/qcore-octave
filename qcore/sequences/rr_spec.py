@@ -7,7 +7,7 @@ def generate_rr_spec(
                     I_Var: ExpVar,
                     Q_Var: ExpVar,
                     rr: Readout
-                ):
+                    ):
 
     def rr_spec(freq: int):
         qua.update_frequency(rr.name, freq)  # update resonator pulse frequency

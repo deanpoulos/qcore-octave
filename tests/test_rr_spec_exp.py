@@ -15,6 +15,7 @@ class RR_Spec(Experiment):
         self.rr = rr
     
     def init_variables(self):
+
         self.I = ExpVar(name='I', var_type=fixed, is_adc=True)
         self.Q = ExpVar(name='Q', var_type=fixed, is_adc=True)
         self.freq = Sweep()
@@ -25,7 +26,8 @@ class RR_Spec(Experiment):
             'freq' : self.freq.q_var
         }
     
-    def process_all_streams(self):
+    def process_streams(self):
+
         self.I.process_stream()
         self.Q.process_stream()
         self.freq.process_stream()
@@ -48,7 +50,7 @@ class RR_Spec(Experiment):
             )
 
             with stream_processing:
-                self.process_all_streams()
+                self.process_streams()
         
         # add with_stream context here
         return qua_program
