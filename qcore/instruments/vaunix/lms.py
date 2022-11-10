@@ -63,10 +63,13 @@ class LMS(Instrument):
         frequency: float = 6e9,
         power: float = 0.0,
         output: bool = False,
+        **parameters,
     ) -> None:
         """ """
         self._handle = None
-        super().__init__(id, name=name, frequency=frequency, power=power, output=output)
+        super().__init__(
+            id, name=name, frequency=frequency, power=power, output=output, **parameters
+        )
 
         DLL.fnLMS_SetTestMode(False)  # we are using actual hardware
         DLL.fnLMS_SetUseInternalRef(self._handle, False)  # use external 10MHz reference
