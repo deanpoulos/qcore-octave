@@ -1,4 +1,5 @@
 """ """
+from qm import qua
 
 from qcore.elements.rf_switch import RFSwitch
 from qcore.helpers.logger import logger
@@ -154,5 +155,26 @@ class Element(Resource):
         operation_dict = {operation.name: operation for operation in self._operations}
         return [operation_dict[name] for name in names if name in operation_dict]
 
-    def play(self) -> None:
+    
+    def play(self, key: str, ampx=1.0, phase=0.0, **kwargs) -> None:
         """ """
+        if key not in self._operations:
+            logger.error(f"No operation named {key} defined for {self}")
+            raise RuntimeError(f"Failed to play Mode operation named '{key}'")
+
+        try:
+            num_ampxs = len(ampx)
+            if num_ampxs != 4:
+                logger.error("Ampx must be a sequence of 4 values")
+                raise ValueError(f"Invalid ampx value count, expect 4, got {num_ampxs}")
+        except TypeError:
+            num_ampxs = 1
+
+        if phase:
+            qua.frame_rotation_2pi(phase, self.name)
+        if num_ampxs == 1:
+            qua.play(key * qua.amp(ampx), self.name, **kwargs)
+        else:
+            qua.play(key * qua.amp(*ampx), self.name, **kwargs)
+        if phase:
+            qua.frame_rotation_2pi(-phase, self.name)
