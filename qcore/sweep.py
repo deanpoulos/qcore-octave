@@ -22,7 +22,7 @@ class Sweep(ExpVar):
         start: float = None,  # sweep start point
         stop: float = None,  # sweep end point
         step: float = None,  # distance between two sweep points
-        endpoint: bool = True,  # whether or not to include end point in sweep
+        include_endpoint: bool = True,  # whether or not to include end point in sweep
         num: int = None,  # number of points in sweep
         kind: str = "lin",  # "lin" or "log" (base 10) sweep
     ) -> None:
@@ -36,7 +36,7 @@ class Sweep(ExpVar):
         self.start = start
         self.stop = stop
         self.step = step
-        self.endpoint = endpoint
+        self.include_endpoint = include_endpoint
         self.num = num
         self.kind = kind
 
@@ -54,15 +54,38 @@ class Sweep(ExpVar):
         elif self.sweeps is not None:
             return np.concatenate([sweep.data for sweep in self.sweeps])
         elif not None in (self.start, self.stop):
+            endpoint = self.include_endpoint
             if self.step is not None:
-                if self.endpoint:
+                if endpoint:
                     return np.arange(self.start, self.stop + self.step / 2, self.step)
                 else:
                     return np.arange(self.start, self.stop - self.step / 2, self.step)
             elif self.num is not None:
                 if self.kind == "lin":
-                    return np.linspace(self.start, self.stop, self.num, self.endpoint)
+                    return np.linspace(self.start, self.stop, self.num, endpoint)
                 elif self.kind == "log":
-                    return np.logspace(self.start, self.stop, self.num, self.endpoint)
+                    return np.logspace(self.start, self.stop, self.num, endpoint)
 
         raise ValueError(f"Underspecified sweep: {self}.")
+
+    @property
+    def length(self) -> int:
+        """ """
+        return len(self.data)
+
+    @property
+    def shape(self) -> tuple[int]:
+        """ """
+        return (self.length,)
+
+    @property
+    def metadata(self) -> dict:
+        """ """
+        x = ("points", "var_type")  # excluded keys
+        metadata = {}
+        for k, v in self.__dict__.items():
+            if isinstance(v, Sweep):
+                metadata[v.name] = v.metadata
+            elif k not in x and v is not None:
+                metadata[k] = v
+        return metadata

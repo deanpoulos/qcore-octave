@@ -89,6 +89,6 @@ class QM(Instrument):
         """ """
         return self._qrf.is_done_fetching
 
-    def fetch(self) -> dict[str, np.ndarray]:
+    def fetch(self) -> tuple[dict[str, np.ndarray], int, int]:
         """ """
-        return self._qrf.fetch()
+        return (self._qrf.fetch(), *self._qrf.counts)
