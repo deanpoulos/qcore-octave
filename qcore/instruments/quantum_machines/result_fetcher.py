@@ -40,14 +40,10 @@ class QMResultFetcher:
 
     def fetch(self) -> dict[str, np.ndarray]:
         """ """
-        self._last_count = self._count
-        self._count = self._count_results()
-
+        self._last_count, self._count = self._count, self._count_results()
         if self.is_done_fetching:
             return {}
-
-        specs = self._spec.values()
-        return {tag: fn(tag) for spec in specs for tag, fn in spec.items()}
+        return {tag: f(tag) for spec in self._spec.values() for tag, f in spec.items()}
 
     def _count_results(self):
         """ """
