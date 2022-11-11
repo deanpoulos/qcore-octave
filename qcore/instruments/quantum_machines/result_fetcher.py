@@ -33,6 +33,11 @@ class QMResultFetcher:
         """flag to indicate job fetch status, True if all results have been fetched"""
         return self._count == self._last_count and not self._handle.is_processing()
 
+    @property
+    def counts(self) -> tuple[int, int]:
+        """return (current count, previous count) of fetched results during live fetching"""
+        return (self._count, self._last_count)
+
     def fetch(self) -> dict[str, np.ndarray]:
         """ """
         self._last_count = self._count
