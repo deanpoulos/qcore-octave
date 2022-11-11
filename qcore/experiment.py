@@ -8,6 +8,7 @@ from datetime import datetime
 from qcore.resource import Resource
 from qcore.sweep import Sweep
 from qcore.dataset import Dataset
+from qcore.helpers.logger import logger
 
 
 class Experiment:
@@ -21,7 +22,7 @@ class Experiment:
         qm: QM,
         savefolder: Path,
         nametag: str = "",
-        fetch_interval: int = 2,
+        fetch_interval: int = 1,
     ):
         self.name = name
         self._savefolder = savefolder
@@ -39,6 +40,7 @@ class Experiment:
             filesuffix = f"_{self._nametag}" if self._nametag else ""
             filename = f"{time}_{self.name}{filesuffix}.h5"
             self._filepath = folderpath / filename
+            logger.debug(f"Generated filepath {self._filepath} for '{self.name}'")
         return self._filepath
 
     def snapshot(self) -> dict:
@@ -74,8 +76,9 @@ class Experiment:
 
     def run(self, save: tuple = (), plot: tuple = ()) -> None:
         """ """
-        self.datasaver = Datasaver(path=self.get_filepath(), *save)
-        self.plotter = Plotter(*plot)
+
+        self.datasaver = Datasaver(self.get_filepath(), *save)
+        #self.plotter = Plotter(*plot)
 
         self.qm.execute(self.construct_pulse_sequence())
 
