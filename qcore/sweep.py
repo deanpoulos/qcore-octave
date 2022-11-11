@@ -12,6 +12,8 @@ class Sweep(ExpVar):
     def __init__(
         self,
         var_type: type,    # type of sweep variable
+        create_stream: bool = True,
+        is_adc: bool = False,
         name: str = None,  # name of sweep variable
         units: str = None,  # units attribute sweep points dataset is saved with
         dtype: str = "f4",  # dtype used to save sweep points dataset
@@ -25,7 +27,7 @@ class Sweep(ExpVar):
         kind: str = "lin",  # "lin" or "log" (base 10) sweep
     ) -> None:
         """ """
-        super().__init__(name, var_type)
+        super().__init__(name, var_type, create_stream, is_adc)
         self.name = name
         self.units = units
         self.dtype = dtype

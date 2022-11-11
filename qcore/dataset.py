@@ -4,9 +4,10 @@ from typing import Union
 
 import numpy as np
 
+from qcore.expvariable import ExpVar
 from qcore.sweep import Sweep
 
-class Dataset:
+class Dataset(ExpVar):
     """ """
 
     def __init__(
@@ -16,8 +17,12 @@ class Dataset:
         dtype: str = "f4",  # dtype used to save dataset
         units: str = None,  # units attribute sweep points dataset is saved with
         data: np.ndarray = None,  # initial data for this dataset
+        var_type: type = None,
+        create_stream: bool = True,
+        is_adc: bool = False
     ) -> None:
         """ """
+        super().__init__(name, var_type, create_stream, is_adc)
         self.axes = axes
         self.name = name
         self.dtype = dtype

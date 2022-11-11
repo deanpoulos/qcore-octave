@@ -18,8 +18,23 @@ class RR_Spec(Experiment):
 
         self.I = ExpVar(name='I', var_type=fixed, is_adc=True)
         self.Q = ExpVar(name='Q', var_type=fixed, is_adc=True)
-        self.freq = Sweep()
-        self.N = Sweep()
+        
+        self.freq = Sweep(
+            name='freq',
+            var_type=int,
+            units='Hz',
+            start=int(-53e6),
+            stop=int(-47e6),
+            step=int(0.1e6)
+        )
+
+        self.N = Sweep(
+            name='N',
+            var_type=int,
+            start=0,
+            stop=50000,
+            step=1,
+        )
 
         self.wait_time = 40000
         self.arg_mapping = {
