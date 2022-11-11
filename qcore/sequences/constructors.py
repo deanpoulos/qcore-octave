@@ -5,10 +5,12 @@ from qm.qua import for_, while_, wait, assign
 from qcore.elements import element, Readout
 from qcore.expvariable import ExpVar
 from qcore.sweep import Sweep
+from qcore.dataset import Dataset
 
 
 def construct_sweep(
     ordered_sweep_list: List[Sweep],
+    measurement_var_list: List[Dataset],
     pulse_sequence: Callable,
     arg_mapping: dict,
     wait_time: int,
@@ -24,8 +26,11 @@ def construct_sweep(
                 # save sweep variables
                 for var in ordered_sweep_list:
                     var.save()
+                
+                for var in measurement_var_list:
+                    var.save()
             else:
-                construct_sweep(curr_idx=(curr_idx + 1))
+                construct_sweep_rec(curr_idx=(curr_idx + 1))
 
     construct_sweep_rec(curr_idx=0)
 
