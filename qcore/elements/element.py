@@ -158,7 +158,7 @@ class Element(Resource):
     
     def play(self, key: str, ampx=1.0, phase=0.0, **kwargs) -> None:
         """ """
-        if key not in self._operations:
+        if key not in {pulse.name for pulse in self._operations}:
             logger.error(f"No operation named {key} defined for {self}")
             raise RuntimeError(f"Failed to play Mode operation named '{key}'")
 

@@ -4,6 +4,8 @@ from qcore.elements.element import Element
 from qcore.pulses.digital_waveform import DigitalWaveform
 from qcore.pulses.ramped_constant_pulse import ConstantPulse
 from qcore.pulses.readout_pulse import ConstantReadoutPulse
+from qm import qua
+from qcore.helpers.logger import logger
 
 
 class Readout(Element):
@@ -11,6 +13,12 @@ class Readout(Element):
 
     PORTS_KEYS = (*Element.PORTS_KEYS, "out")
     OFFSETS_KEYS = (*Element.OFFSETS_KEYS, "out")
+
+    DEMOD_METHOD_MAP = {
+        "sliced": qua.demod.sliced,
+        "accumulated": qua.demod.accumulated,
+        "window": qua.demod.moving_window,
+    }
 
     def __init__(
         self, time_of_flight: int = 180, smearing: int = 0, **parameters
@@ -39,7 +47,7 @@ class Readout(Element):
         demod_args: tuple = None,
     ) -> None:
         """ """
-        iw_key_i, iw_key_q = self.readout_pulse.integration_weights.keys
+        iw_key_i, iw_key_q = "cosine", "sine"  # TODO relax hard coding
         var_i, var_q = targets
 
         if demod_type == "full":
@@ -47,7 +55,7 @@ class Readout(Element):
             demod_i, demod_q = qua.demod.full(*output_i), qua.demod.full(*output_q)
         else:
             try:
-                demod_method = self._demod_method_map[demod_type]
+                demod_method = self.DEMOD_METHOD_MAP[demod_type]
             except KeyError:
                 logger.error(f"Unrecognized demod type '{demod_type}'")
                 raise
@@ -56,7 +64,7 @@ class Readout(Element):
                 output_q = (iw_key_q, var_q, *demod_args)
                 demod_i, demod_q = demod_method(*output_i), demod_method(*output_q)
 
-        key = "readout_pulse"
+        key = "readout_pulse"  # TODO relax hard coding
         try:
             qua.measure(key * qua.amp(ampx), self.name, stream, demod_i, demod_q)
         except Exception:  # QM forced me to catch base class Exception...
