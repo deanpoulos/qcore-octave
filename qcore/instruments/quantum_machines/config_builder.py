@@ -269,8 +269,8 @@ class QMConfig(defaultdict):
         if pulse_type == "measurement" and pulse.has_mixed_waveforms():
             iw_cos_name = pulse_name + "." + "cos"
             iw_sin_name = pulse_name + "." + "sin"
-            pulse_config["integration_weights"]["cos"] = iw_cos_name
-            pulse_config["integration_weights"]["sin"] = iw_sin_name
+            pulse_config["integration_weights"][iw_cos_name] = iw_cos_name
+            pulse_config["integration_weights"][iw_sin_name] = iw_sin_name
             self.set_integration_weights(pulse, iw_cos_name, iw_sin_name)
 
     def set_pulse_length(self, name: str, value: int) -> None:

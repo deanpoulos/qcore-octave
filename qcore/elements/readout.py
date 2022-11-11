@@ -47,7 +47,10 @@ class Readout(Element):
         demod_args: tuple = None,
     ) -> None:
         """ """
-        iw_key_i, iw_key_q = "cosine", "sine"  # TODO relax hard coding
+        key = "readout_pulse"  # TODO relax hard coding
+        iw_key_i = self.name + "." + key + ".cos"
+        iw_key_q = self.name + "." + key + ".sin"
+
         var_i, var_q = targets
 
         if demod_type == "full":
@@ -64,7 +67,6 @@ class Readout(Element):
                 output_q = (iw_key_q, var_q, *demod_args)
                 demod_i, demod_q = demod_method(*output_i), demod_method(*output_q)
 
-        key = "readout_pulse"  # TODO relax hard coding
         try:
             qua.measure(key * qua.amp(ampx), self.name, stream, demod_i, demod_q)
         except Exception:  # QM forced me to catch base class Exception...
