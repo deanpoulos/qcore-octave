@@ -6,13 +6,14 @@ from qcore.elements import element, Readout
 from qcore.expvariable import ExpVar
 from qcore.sweep import Sweep
 
-def construct_sweep(ordered_sweep_list: List[Sweep],
-                    pulse_sequence: Callable,
-                    arg_mapping: dict,
-                    wait_time: int,
-                    wait_elem: element
-                    ):
 
+def construct_sweep(
+    ordered_sweep_list: List[Sweep],
+    pulse_sequence: Callable,
+    arg_mapping: dict,
+    wait_time: int,
+    wait_elem: element,
+):
     def construct_sweep_rec(curr_idx: int):
         s_var = ordered_sweep_list[curr_idx]
         var = s_var.q_var
@@ -28,18 +29,16 @@ def construct_sweep(ordered_sweep_list: List[Sweep],
 
     construct_sweep_rec(curr_idx=0)
 
+
 def repeat_until_true(q_var: ExpVar, pulse_seq: Callable):
 
     with while_(q_var):
         pulse_seq()
 
-def wait_for_reset(I: ExpVar,
-                   Q: ExpVar,
-                   is_e_state: ExpVar,
-                   thr: float,
-                   wait_time: int,
-                   rr: Readout
-                   ):
+
+def wait_for_reset(
+    I: ExpVar, Q: ExpVar, is_e_state: ExpVar, thr: float, wait_time: int, rr: Readout
+):
 
     rr.measure((I.q_var, Q.q_var))
     assign(is_e_state, I.q_var > thr)

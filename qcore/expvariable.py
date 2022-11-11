@@ -1,14 +1,14 @@
 from qm import qua
 
-class ExpVar:
 
+class ExpVar:
     def __init__(
-                self,
-                name: str,
-                var_type: type,
-                create_stream: bool = True,
-                is_adc: bool = False
-            ):
+        self,
+        name: str,
+        var_type: type,
+        create_stream: bool = True,
+        is_adc: bool = False,
+    ):
 
         self.name = name
         self.var_type = var_type
@@ -18,7 +18,7 @@ class ExpVar:
             self.stream = qua.declare_stream(is_adc=is_adc)
         else:
             self.stream = None
-    
+
     def save(self):
         qua.save(self.q_var, self.stream)
 

@@ -7,6 +7,7 @@ import numpy as np
 from qcore.expvariable import ExpVar
 from qcore.sweep import Sweep
 
+
 class Dataset(ExpVar):
     """ """
 
@@ -19,7 +20,7 @@ class Dataset(ExpVar):
         data: np.ndarray = None,  # initial data for this dataset
         var_type: type = None,
         create_stream: bool = True,
-        is_adc: bool = False
+        is_adc: bool = False,
     ) -> None:
         """ """
         super().__init__(name, var_type, create_stream, is_adc)

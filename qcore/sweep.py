@@ -6,12 +6,13 @@ import numpy as np
 
 from qcore.expvariable import ExpVar
 
+
 class Sweep(ExpVar):
     """ """
 
     def __init__(
         self,
-        var_type: type,    # type of sweep variable
+        var_type: type,  # type of sweep variable
         create_stream: bool = True,
         is_adc: bool = False,
         name: str = None,  # name of sweep variable
