@@ -6,12 +6,13 @@ import numpy as np
 
 from qcore.sweep import Sweep
 
+
 class Dataset:
     """ """
 
     def __init__(
         self,
-        axes: list[Union[Sweep, str]],  # defines the dataset's dimension(s)
+        axes: list[Union[Sweep, int]],  # defines the dataset's dimension(s)
         name: str = None,  # name of the dataset, as it will appear in the datafile
         dtype: str = "f4",  # dtype used to save dataset
         units: str = None,  # units attribute sweep points dataset is saved with
@@ -26,3 +27,14 @@ class Dataset:
         # the current batch of data assigned to this dataset
         # can be used during live fetching to store intermediate values for analysis
         self.data: np.ndarray = data
+
+    @property
+    def shape(self) -> list[int]:
+        """ """
+        return [item.length if isinstance(item, Sweep) else item for item in self.axes]
+
+    @property
+    def metadata(self) -> dict:
+        """ """
+        x = ("data", "axes")  # excluded keys
+        return {k: v for k, v in self.__dict__.items() if k not in x and v is not None}
