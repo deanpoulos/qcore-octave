@@ -1,33 +1,35 @@
 from qm.qua import fixed, program, stream_processing
-
+from pathlib import Path
 from qcore.elements import Readout
 from qcore.experiment import Experiment
-from qcore.expvariable import ExpVar
 from qcore.sweep import Sweep
 from qcore.sequences.rr_spec import generate_rr_spec
 from qcore.sequences.constructors import construct_sweep
 from qcore.instruments import QM
 from qcore.dataset import Dataset
 import numpy as np
+from qcore.helpers.stage import Stage
+
+from config.myproject.config import CONFIGPATHS
 
 
 class RR_Spec(Experiment):
     def __init__(self, rr: Readout, **kwargs):
         self.rr = rr
-
-        super().__init__(**kwargs)
+        self.init_variables()
+        super().__init__(name="rr_spec", **kwargs)
 
     def init_variables(self):
 
         # set control variables
-        self.wait_time = 20000  # ns
+        self.wait_time = 100000  # ns
 
         # set sweep variables
         self.N = Sweep(
             name="N",
             var_type=int,
             start=0,
-            stop=50000,
+            stop=2000,
             step=1,
         )
 
@@ -55,41 +57,49 @@ class RR_Spec(Experiment):
             axes=[self.freq], name="PHASE", units="rad", data=init_data
         )
 
+    def declare_variables(self):
+        self.I.declare_var()
+        self.Q.declare_var()
+        self.freq.declare_var()
+        self.N.declare_var()
+
         self.arg_mapping = {"freq": self.freq.q_var}
 
     def process_streams(self):
 
-        self.I.process_stream()
-        self.Q.process_stream()
-        self.freq.process_stream(save_all=False)
-        self.N.process_stream(save_all=False)
+        self.I.process_stream(buffer_dim=self.I.shape)
+        self.Q.process_stream(buffer_dim=self.I.shape)
+        self.freq.process_stream(buffer_dim=self.freq.shape, save_all=False)
+        self.N.process_stream(buffer_dim=self.freq.shape, save_all=False)
 
     def construct_pulse_sequence(self):
 
         with program() as qua_program:
-            self.init_variables()
+            self.declare_variables()
 
             rr_spec = generate_rr_spec(self.I, self.Q, self.rr)
             ordered_sweep_list = [self.N, self.freq]
+            measurement_var_list = [self.I, self.Q]
 
             construct_sweep(
                 ordered_sweep_list=ordered_sweep_list,
+                measurement_var_list=measurement_var_list,
                 pulse_sequence=rr_spec,
                 arg_mapping=self.arg_mapping,
                 wait_time=self.wait_time,
                 wait_elem=self.rr,
             )
 
-            with stream_processing:
+            with stream_processing():
                 self.process_streams()
 
-        # add with_stream context here
+        # print(qua_program.__dict__)
         return qua_program
 
     def process_data(self, datasaver, data, current_count, last_count):
         """this is INSIDE the fetch loop!!! use for live processing only!!!"""
         # while saving, assume sweep order and dimension and dataset axes order and dimension is consistent
-
+        
         # save frequency data
         datasaver.save_data(self.freq, data["freq"])
 
@@ -119,4 +129,26 @@ class RR_Spec(Experiment):
         ) / current_count
 
         # live plot datasets
-        self.plotter.plot()
+        # self.plotter.plot()
+
+
+if __name__ == "__main__":
+
+    with Stage(*CONFIGPATHS, remote=False) as stage:
+
+        # retrieve resources from stage
+        rr, lo_rr = stage.get("RR", "LO_RR")
+
+        # configure instruments
+        lo_rr.configure(frequency=7.582e9, power=13.0, output=True)
+        qm = QM(elements=(rr,), oscillators=(lo_rr,))
+
+        qm_config = qm.get_config()
+        with open(Path().cwd() / "config/qmc.py", "w+") as file:
+            file.write("config = ")
+            file.write(str(qm_config))
+
+        # initialize experiments, choose which datasets to plot/save, and run!
+        savefolder = Path.cwd() / "config/myproject/data"
+        expt = RR_Spec(rr=rr, qm=qm, savefolder=savefolder)
+        expt.run(save=(expt.I, expt.Q), plot=(expt.iq_avg, expt.magnitude, expt.phase))
