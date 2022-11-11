@@ -12,19 +12,22 @@ class ExpVar:
 
         self.name = name
         self.var_type = var_type
-        self.q_var = qua.declare(var_type)
+        self.create_stream = create_stream
+        self.is_adc = is_adc
 
-        if create_stream:
-            self.stream = qua.declare_stream(is_adc=is_adc)
+    def declare_var(self):
+        self.q_var = qua.declare(self.var_type)
+
+        if self.create_stream:
+            self.stream = qua.declare_stream()
         else:
             self.stream = None
 
     def save(self):
         qua.save(self.q_var, self.stream)
 
-    def process_stream(self, save_all: bool = True):
-
+    def process_stream(self, buffer_dim: tuple[int], save_all: bool = True):
         if save_all:
-            self.stream.save_all(self.name)
+            self.stream.buffer(*buffer_dim).save_all(self.name)
         else:
-            self.stream.save(self.name)
+            self.stream.buffer(*buffer_dim).save(self.name)
