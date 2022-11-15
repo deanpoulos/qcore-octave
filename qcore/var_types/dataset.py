@@ -4,11 +4,11 @@ from typing import Union
 
 import numpy as np
 
-from qcore.expvariable import ExpVar
-from qcore.sweep import Sweep
+from qcore.var_types.variable import Variable
+from qcore.var_types.sweep import Sweep
 
 
-class Dataset(ExpVar):
+class Dataset(Variable):
     """ """
 
     def __init__(

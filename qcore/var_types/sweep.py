@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import numpy as np
 
-from qcore.expvariable import ExpVar
+from qcore.var_types.variable import Variable
 
 
-class Sweep(ExpVar):
+class Sweep(Variable):
     """ """
 
     def __init__(
