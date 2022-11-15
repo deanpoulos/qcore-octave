@@ -2,12 +2,12 @@ from qm.qua import fixed, program, stream_processing
 
 from qcore.elements import Readout
 from qcore.experiment import Experiment
-from qcore.expvariable import ExpVar
-from qcore.sweep import Sweep
-from qcore.sequences.rr_spec import generate_rr_spec
+from qcore.var_types.variable import Variable
+from qcore.var_types.sweep import Sweep
+from qcore.sequences.rr_spec import rr_spec
 from qcore.sequences.constructors import construct_sweep
 from qcore.instruments import QM
-from qcore.dataset import Dataset
+from qcore.var_types.dataset import Dataset
 import numpy as np
 
 
@@ -18,18 +18,6 @@ class RR_Spec(Experiment):
         super().__init__(**kwargs)
 
     def init_variables(self):
-
-        # set control variables
-        self.wait_time = 20000  # ns
-
-        # set sweep variables
-        self.N = Sweep(
-            name="N",
-            var_type=int,
-            start=0,
-            stop=50000,
-            step=1,
-        )
 
         self.freq = Sweep(
             start=int(-60e6),
@@ -55,36 +43,9 @@ class RR_Spec(Experiment):
             axes=[self.freq], name="PHASE", units="rad", data=init_data
         )
 
-        self.arg_mapping = {"freq": self.freq.q_var}
+    def pulse_sequence(self):
 
-    def process_streams(self):
-
-        self.I.process_stream()
-        self.Q.process_stream()
-        self.freq.process_stream(save_all=False)
-        self.N.process_stream(save_all=False)
-
-    def construct_pulse_sequence(self):
-
-        with program() as qua_program:
-            self.init_variables()
-
-            rr_spec = generate_rr_spec(self.I, self.Q, self.rr)
-            ordered_sweep_list = [self.N, self.freq]
-
-            construct_sweep(
-                ordered_sweep_list=ordered_sweep_list,
-                pulse_sequence=rr_spec,
-                arg_mapping=self.arg_mapping,
-                wait_time=self.wait_time,
-                wait_elem=self.rr,
-            )
-
-            with stream_processing:
-                self.process_streams()
-
-        # add with_stream context here
-        return qua_program
+        rr_spec(self.I, self.Q, self.rr, self.freq)
 
     def process_data(self, datasaver, data, current_count, last_count):
         """this is INSIDE the fetch loop!!! use for live processing only!!!"""
@@ -120,3 +81,11 @@ class RR_Spec(Experiment):
 
         # live plot datasets
         self.plotter.plot()
+
+
+if __name__ == "__main__":
+
+    experiment_parameters = {
+        "reps": 300000,
+        "wait_time": 400000,
+    }
