@@ -9,9 +9,9 @@ from typing import Union
 import h5py
 import numpy as np
 
-from qcore.dataset import Dataset
+from qcore.var_types.dataset import Dataset
 from qcore.helpers.logger import logger
-from qcore.sweep import Sweep
+from qcore.var_types.sweep import Sweep
 
 
 class DataSavingError(Exception):

@@ -2,11 +2,12 @@ from qm.qua import fixed, program, stream_processing
 from pathlib import Path
 from qcore.elements import Readout
 from qcore.experiment import Experiment
-from qcore.sweep import Sweep
-from qcore.sequences.rr_spec import generate_rr_spec
+from qcore.var_types.variable import Variable
+from qcore.var_types.sweep import Sweep
+from qcore.sequences.rr_spec import rr_spec
 from qcore.sequences.constructors import construct_sweep
 from qcore.instruments import QM
-from qcore.dataset import Dataset
+from qcore.var_types.dataset import Dataset
 import numpy as np
 from qcore.helpers.stage import Stage
 
@@ -20,18 +21,6 @@ class RR_Spec(Experiment):
         super().__init__(name="rr_spec", **kwargs)
 
     def init_variables(self):
-
-        # set control variables
-        self.wait_time = 100000  # ns
-
-        # set sweep variables
-        self.N = Sweep(
-            name="N",
-            var_type=int,
-            start=0,
-            stop=2000,
-            step=1,
-        )
 
         self.freq = Sweep(
             start=int(-60e6),
@@ -57,44 +46,9 @@ class RR_Spec(Experiment):
             axes=[self.freq], name="PHASE", units="rad", data=init_data
         )
 
-    def declare_variables(self):
-        self.I.declare_var()
-        self.Q.declare_var()
-        self.freq.declare_var()
-        self.N.declare_var()
+    def pulse_sequence(self):
 
-        self.arg_mapping = {"freq": self.freq.q_var}
-
-    def process_streams(self):
-
-        self.I.process_stream(buffer_dim=self.I.shape)
-        self.Q.process_stream(buffer_dim=self.I.shape)
-        self.freq.process_stream(buffer_dim=self.freq.shape, save_all=False)
-        self.N.process_stream(buffer_dim=self.freq.shape, save_all=False)
-
-    def construct_pulse_sequence(self):
-
-        with program() as qua_program:
-            self.declare_variables()
-
-            rr_spec = generate_rr_spec(self.I, self.Q, self.rr)
-            ordered_sweep_list = [self.N, self.freq]
-            measurement_var_list = [self.I, self.Q]
-
-            construct_sweep(
-                ordered_sweep_list=ordered_sweep_list,
-                measurement_var_list=measurement_var_list,
-                pulse_sequence=rr_spec,
-                arg_mapping=self.arg_mapping,
-                wait_time=self.wait_time,
-                wait_elem=self.rr,
-            )
-
-            with stream_processing():
-                self.process_streams()
-
-        # print(qua_program.__dict__)
-        return qua_program
+        rr_spec(self.I, self.Q, self.rr, self.freq)
 
     def process_data(self, datasaver, data, current_count, last_count):
         """this is INSIDE the fetch loop!!! use for live processing only!!!"""
@@ -129,7 +83,7 @@ class RR_Spec(Experiment):
         ) / current_count
 
         # live plot datasets
-        # self.plotter.plot()
+        self.plotter.plot()
 
 
 if __name__ == "__main__":
@@ -152,3 +106,8 @@ if __name__ == "__main__":
         savefolder = Path.cwd() / "config/myproject/data"
         expt = RR_Spec(rr=rr, qm=qm, savefolder=savefolder)
         expt.run(save=(expt.I, expt.Q), plot=(expt.iq_avg, expt.magnitude, expt.phase))
+
+    experiment_parameters = {
+        "reps": 300000,
+        "wait_time": 400000,
+    }

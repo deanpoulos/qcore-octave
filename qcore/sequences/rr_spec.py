@@ -1,12 +1,13 @@
 from qm import qua
 
 from qcore.elements import Readout
-from qcore.expvariable import ExpVar
+from qcore.var_types.variable import Variable
 
 
-def generate_rr_spec(I_Var: ExpVar, Q_Var: ExpVar, rr: Readout):
-    def rr_spec(freq: int):
-        qua.update_frequency(rr.name, freq)  # update resonator pulse frequency
-        rr.measure((I_Var.q_var, Q_Var.q_var))
+def rr_spec(I_Var: Variable, Q_Var: Variable, rr: Readout, freq: Variable):
 
-    return rr_spec
+    qua.update_frequency(rr.name, freq.q_var)  # update resonator pulse frequency
+    rr.measure((I_Var.q_var, Q_Var.q_var))
+
+    I_Var.save()
+    Q_Var.save()
