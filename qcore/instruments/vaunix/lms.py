@@ -5,7 +5,7 @@ from ctypes import CDLL, c_int
 from pathlib import Path
 
 from qcore.instruments.instrument import Instrument, ConnectionError
-from qcore.parameter import Parameter
+from qcore.variables.parameter import Parameter
 
 # DLL driver must be placed in the same folder as this file
 DLL = CDLL(str(Path(__file__).parent / "lms.dll"))

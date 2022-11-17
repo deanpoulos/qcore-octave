@@ -1,7 +1,7 @@
 """ """
 
 from qcore.helpers.logger import logger
-from qcore.parameter import Parameter
+from qcore.variables.parameter import Parameter
 from qcore.resource import Resource
 
 

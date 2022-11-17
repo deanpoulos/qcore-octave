@@ -4,7 +4,7 @@ import inspect
 from typing import Any
 
 import qcore.helpers.yamlizer as yml
-from qcore.parameter import Parameter
+from qcore.variables.parameter import Parameter
 
 
 class ResourceMetaclass(type):
