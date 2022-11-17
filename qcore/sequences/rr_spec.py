@@ -1,7 +1,7 @@
 from qm import qua
 
 from qcore.elements import Readout
-from qcore.var_types.variable import Variable
+from qcore.variables.variable import Variable
 
 
 def rr_spec(I_Var: Variable, Q_Var: Variable, rr: Readout, freq: Variable):

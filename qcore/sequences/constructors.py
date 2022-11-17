@@ -3,8 +3,8 @@ from typing import Callable, List
 from qm.qua import for_, while_, wait, assign
 
 from qcore.elements import element, Readout
-from qcore.var_types.variable import Variable
-from qcore.var_types.sweep import Sweep
+from qcore.variables.variable import Variable
+from qcore.variables.sweep import Sweep
 
 
 def construct_sweep(

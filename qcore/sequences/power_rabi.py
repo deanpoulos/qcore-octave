@@ -1,7 +1,7 @@
 from qm import qua
 
 from qcore.elements import Readout, Qubit
-from qcore.var_types.variable import Variable
+from qcore.variables.variable import Variable
 
 
 def generate_power_rabi(

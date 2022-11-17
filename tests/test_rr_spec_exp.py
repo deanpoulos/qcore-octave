@@ -2,12 +2,12 @@ from qm.qua import fixed, program, stream_processing
 from pathlib import Path
 from qcore.elements import Readout
 from qcore.experiment import Experiment
-from qcore.var_types.variable import Variable
-from qcore.var_types.sweep import Sweep
+from qcore.variables.variable import Variable
+from qcore.variables.sweep import Sweep
 from qcore.sequences.rr_spec import rr_spec
 from qcore.sequences.constructors import construct_sweep
 from qcore.instruments import QM
-from qcore.var_types.dataset import Dataset
+from qcore.variables.dataset import Dataset
 import numpy as np
 from qcore.helpers.stage import Stage
 

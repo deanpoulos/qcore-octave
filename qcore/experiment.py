@@ -13,7 +13,7 @@ from qcore.helpers.plotter import Plotter
 from qcore.resource import Resource
 from qcore.sequences.constructors import construct_sweep
 from qcore.helpers.logger import logger
-from qcore.var_types import Dataset, Sweep, Variable
+from qcore.variables import Dataset, Sweep, Variable
 
 
 class Experiment:

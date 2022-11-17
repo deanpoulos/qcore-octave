@@ -4,8 +4,8 @@ from typing import Union
 
 import numpy as np
 
-from qcore.var_types.variable import Variable
-from qcore.var_types.sweep import Sweep
+from qcore.variables.variable import Variable
+from qcore.variables.sweep import Sweep
 
 
 class Dataset(Variable):
