@@ -133,12 +133,12 @@ class Element(Resource):
             self._operations = value
             logger.debug(f"Set {self} ops: {operation_names}.")
 
-    def add_operations(self, value: list[Pulse]) -> None:
+    def add_operations(self, *value: Pulse) -> None:
         """ """
         try:
             self.operations = [*self._operations, *value]
         except TypeError:
-            raise ValueError(f"Setter expects {list[Pulse]}.") from None
+            raise ValueError(f"Setter expects {Pulse}.") from None
 
     def remove_operations(self, *names: str) -> None:
         """ """
