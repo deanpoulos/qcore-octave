@@ -11,7 +11,7 @@ from qcore.variables.dataset import Dataset
 import numpy as np
 from qcore.helpers.stage import Stage
 
-from config.myproject.config import CONFIGPATHS
+from examples.project_folder.config import CONFIGPATHS
 
 
 class RR_Spec(Experiment):

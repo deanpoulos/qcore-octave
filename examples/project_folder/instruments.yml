@@ -1,0 +1,12 @@
+- !<LMS>
+  name: LO_RR
+  clocked: true
+  frequency: 7.582000E+09
+  id: '25335'
+  max_frequency: 1.382723E+10
+  max_power: 15.0
+  min_frequency: 5.000000E+09
+  min_power: -35.0
+  output: true
+  power: 13.0
+  status: true

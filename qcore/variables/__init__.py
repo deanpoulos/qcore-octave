@@ -1,3 +1,3 @@
-from dataset import Dataset
-from sweep import Sweep
-from variable import Variable
+from qcore.variables.dataset import Dataset
+from qcore.variables.sweep import Sweep
+from qcore.variables.variable import Variable
