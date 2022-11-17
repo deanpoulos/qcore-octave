@@ -30,7 +30,7 @@ class Stage:
         self,
         *sources: Union[Path, Resource],
         configpath: Path = None,
-        remote: bool = True,
+        remote: bool = False,
     ) -> None:
         """
         sources (Path | Resource): Resource objects or Path to .yml config files containing Resource objects to be staged

@@ -3,7 +3,9 @@
 from typing import Type
 
 import Pyro5.api as pyro
+import Pyro5.errors as pyro_errors
 
+from qcore.helpers.logger import logger
 from qcore.instruments.instrument import Instrument
 from qcore.resource import Resource
 
@@ -69,8 +71,14 @@ class Server:
 def link() -> tuple[pyro.Proxy, list[pyro.Proxy]]:
     """ """
     server = pyro.Proxy(Server.URI)
-    instruments = [pyro.Proxy(uri) for uri in server.services]
-    return (server, instruments)
+    try:
+        services = server.services
+    except pyro_errors.CommunicationError:  # no remote server found
+        logger.warning(f"Remote server requested but not found at {Server.URI}")
+        return (None, [])
+    else:
+        instruments = [pyro.Proxy(uri) for uri in services]
+        return (server, instruments)
 
 
 def unlink(server: pyro.Proxy, *instruments: pyro.Proxy) -> None:
