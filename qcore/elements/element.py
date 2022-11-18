@@ -43,7 +43,7 @@ class Element(Resource):
         snapshot = super().snapshot()
         if flatten:
             operations = snapshot["operations"]
-            flat_ops = {key: pulse.snapshot() for key, pulse in operations.items()}
+            flat_ops = {k: p.snapshot(flatten=True) for k, p in operations.items()}
             snapshot["operations"] = flat_ops
             rf_switch = snapshot["rf_switch"]
             if rf_switch is not None:
