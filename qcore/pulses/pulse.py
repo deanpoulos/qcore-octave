@@ -62,10 +62,11 @@ class Pulse(Resource):
         self._digital_marker = value
         logger.debug(f"Set {self} digital marker to {value}.")
 
-    def snapshot(self) -> dict[str, Any]:
+    def snapshot(self, flatten=False) -> dict[str, Any]:
         """ """
         snapshot = super().snapshot()
-        digital_marker = snapshot["digital_marker"]
-        if digital_marker is not None:
-            snapshot["digital_marker"] = digital_marker.snapshot()
+        if flatten:
+            digital_marker = snapshot["digital_marker"]
+            if digital_marker is not None:
+                snapshot["digital_marker"] = digital_marker.snapshot()
         return snapshot

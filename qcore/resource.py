@@ -76,7 +76,7 @@ class Resource(metaclass=ResourceMetaclass):
             if name in settables:
                 setattr(self, name, value)
 
-    def snapshot(self) -> dict[str, Any]:
+    def snapshot(self, flatten=False) -> dict[str, Any]:
         """ """
         keys = sorted(self.gettables())
         keys.remove("name")

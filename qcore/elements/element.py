@@ -38,15 +38,16 @@ class Element(Resource):
 
         super().__init__(name=name, ports=ports, **parameters)
 
-    def snapshot(self) -> dict[str, Any]:
+    def snapshot(self, flatten=False) -> dict[str, Any]:
         """ """
         snapshot = super().snapshot()
-        operations = snapshot["operations"]
-        flat_operations = {name: pulse.snapshot() for name, pulse in operations.items()}
-        snapshot["operations"] = flat_operations
-        rf_switch = snapshot["rf_switch"]
-        if rf_switch is not None:
-            snapshot["rf_switch"] = rf_switch.snapshot()
+        if flatten:
+            operations = snapshot["operations"]
+            flat_ops = {key: pulse.snapshot() for key, pulse in operations.items()}
+            snapshot["operations"] = flat_ops
+            rf_switch = snapshot["rf_switch"]
+            if rf_switch is not None:
+                snapshot["rf_switch"] = rf_switch.snapshot()
         return snapshot
 
     @property
