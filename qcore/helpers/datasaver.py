@@ -245,9 +245,12 @@ class Datasaver:
         self._datalog[name] = size
 
     def save_metadata(self, metadataspec: dict[str | None, dict]) -> None:
-        """metadataspec is a dict of dicts. first dict key = group in data file to save the metadata to. if key is a str, we create a group with that name. if key is None, we save to top level group in the file. value = metadata dict with key-value pair stored as attributes of the group named by their key. every key in the metadata dict must be a string.
-
-        if we find dict(s) or other iterables inside the given metadata dict, we save them as metadata at the appropriate group level recursively."""
+        """metadataspec is a dict of dicts. outermost dict key = group in data file to save the metadata to. if key is a str, we create a group with that name. if key is None, we save to top level group in the file. value = metadata dict with key-value pair stored as attributes of the group named by their key. every key in the metadata dict must be a string. the following metadata dict values types/structures are recognized and saved according to the convention below (others are ignored and a warning is thrown):
+        1. a single Number (int, float, complex) or string or bool is saved as is
+        2. a numpy array, within hdf5 size limitations (<64kB) is saved as is
+        3. collections (list, tuple, set, frozenset) are all cast to list, and if they contain all types in point (1), we save them as is. else, we convert the list to a dict with the value's index as the key and save this dictionary.
+        4. None type is saved as an empty string as hdf5 doesn't have a native None type
+        4. a dictionary whose key-value pairs comply with the convention above"""
         self._validate_session()
         file = self._file
         for name, metadata in metadataspec.items():
@@ -264,21 +267,18 @@ class Datasaver:
                     self._save_metadata(subgroup, **value)
                 else:
                     group.attrs[key] = value
-
-                    logger.debug(
-                        f"Set {group = } attribute '{key}' with value of {type(value)}."
-                    )
+                    logger.debug(f"Set {group = } attr '{key}' with {type(value) = }.")
         except ValueError:
             message = (
                 f"Got ValueError while saving metadata with {key = } and {value = }. "
-                f"Data size is too large (>64k), please save it as a dataset instead."
+                f"Data size is too large (>64kB), please save it as a dataset instead."
             )
             logger.error(message)
             raise DataSavingError(message)
         except TypeError:
             message = (
                 f"Got TypeError while saving metadata with {key = } and {value = }. "
-                f"This is because h5py does not support the data type of the value."
+                f"This is because h5py does not support this data type / structure."
             )
             logger.error(message)
             raise DataSavingError(message)
@@ -289,16 +289,8 @@ class Datasaver:
             return value
         elif isinstance(value, (list, tuple, set, frozenset)):
             value = list(value)
-
-            if not value:  # return list as is if empty
-                return value
-            elif len(value) == 1:  # return the single value for lists of length one
-                return value[0]
-
-            # if list contains all numbers, return as is
-            is_numeric = all(isinstance(item, Number) for item in value)
-            is_same_type = all(isinstance(item, type(value[0])) for item in value[1:])
-            if is_numeric or is_same_type:
+            # if list contains all numbers or strings or bool, return as is
+            if all(isinstance(item, (Number, str, bool)) for item in value):
                 return value
             else:  # else convert it to a dictionary with the index as the key
                 return {str(idx): item for idx, item in enumerate(value)}
