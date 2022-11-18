@@ -98,9 +98,6 @@ if __name__ == "__main__":
         qm = QM(elements=(rr,), oscillators=(lo_rr,))
 
         qm_config = qm.get_config()
-        with open(Path().cwd() / "config/qmc.py", "w+") as file:
-            file.write("config = ")
-            file.write(str(qm_config))
 
         # initialize experiments, choose which datasets to plot/save, and run!
         savefolder = Path.cwd() / "config/myproject/data"

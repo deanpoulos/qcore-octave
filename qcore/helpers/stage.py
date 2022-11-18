@@ -140,7 +140,7 @@ class Stage:
     def get(self, *names: str) -> Resource | list[Resource]:
         """ """
         if len(names) == 1 and names[0] in self._resources:
-            return self._resources[name]
+            return self._resources[names[0]]
 
         resources = []
         for name in names:

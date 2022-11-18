@@ -3,6 +3,7 @@
 import inspect
 from typing import Any
 
+from qcore.helpers.logger import logger
 import qcore.helpers.yamlizer as yml
 from qcore.variables.parameter import Parameter
 
@@ -75,9 +76,38 @@ class Resource(metaclass=ResourceMetaclass):
             if name in settables:
                 setattr(self, name, value)
 
-    def snapshot(self) -> dict[str, Any]:
+    def snapshot(self, flatten=False) -> dict[str, Any]:
         """ """
+        if flatten:
+            return {self._flat_snapshot(k, v) for k, v in self.snapshot().items()}
         keys = sorted(self.gettables())
         keys.remove("name")
         keys.insert(0, "name")
         return {key: getattr(self, key) for key in keys if hasattr(self, key)}
+
+    def _flat_snapshot(self, key: str, value: Any) -> dict[str, Any]:
+        """ """
+        flat_snapshot = {}
+        if isinstance(obj, dict):
+            for key, value in obj.items():
+                flat_snapshot[key] = self._flat_snapshot(value)
+        elif isinstance(obj, (list, tuple, set, frozenset)):            
+            for value in obj:
+                if isin
+                
+                if isinstance(value, Resource):
+                    nested_snapshot = self._flat_snapshot(value.snapshot(flatten=True))
+                    flat_snapshot[key] = nested_snapshot
+                elif isinstance(value, (dict, list, tuple, set, frozenset)):
+                    flat_snapshot[key] = self._flat_snapshot(value)
+                else:
+                    flat_snapshot[key] = value
+        elif isinstance(obj, Resource):
+            flat_snapshot[obj.name] = obj.snapshot(flatten=True)
+        elif isinstance(obj, (list, set, tuple, frozenset)):
+            is_resource_container = all(isinstance(value, Resource) for value in obj)
+            if is_resource_container:
+                flat_snapshot[key] = {r.name: r.snapshot(flatten=True) for r in obj}
+        else:
+            flat_snapshot[]
+        return flat_snapshot

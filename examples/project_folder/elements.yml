@@ -1,3 +1,38 @@
+- !<Qubit>
+  name: QUBIT
+  int_freq: -5.000000E+07
+  lo_name: lo_qubit
+  mixer_offsets:
+    I: 0.0
+    Q: 0.0
+    G: 0.0
+    P: 0.0
+  operations:
+  - !<ConstantPulse>
+    name: constant_pulse
+    I_ampx: 1.0
+    Q_ampx: 0.0
+    digital_marker: null
+    length: 1000
+    pad: 0
+    total_I_amp: 0.2
+    total_length: 1000
+  - !<GaussianPulse>
+    name: gaussian_pulse
+    I_ampx: 1.0
+    Q_ampx: 0.0
+    chop: 6
+    digital_marker: null
+    pad: 0
+    sigma: 10
+    total_I_ampx: 0.2
+    total_length: 60
+  ports:
+    I: 3
+    Q: 4
+  rf_switch: null
+  rf_switch_on: false
+
 - !<Readout>
   name: RR
   int_freq: -5.000000E+07

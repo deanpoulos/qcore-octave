@@ -295,7 +295,7 @@ class Datasaver:
             elif len(value) == 1:  # return the single value for lists of length one
                 return value[0]
 
-            # if list contains all numbers or all values of the same type, return as is
+            # if list contains all numbers, return as is
             is_numeric = all(isinstance(item, Number) for item in value)
             is_same_type = all(isinstance(item, type(value[0])) for item in value[1:])
             if is_numeric or is_same_type:

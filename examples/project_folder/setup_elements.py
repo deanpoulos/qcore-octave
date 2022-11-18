@@ -6,6 +6,7 @@ configfolder = Path.cwd() / "examples/project_folder"
 
 # %% update existing readout element parameters
 from qcore.helpers.stage import Stage
+from qcore.pulses import *
 readout_configpath = configfolder / "readout.yml"
 with Stage(readout_configpath) as stage:
     readout = stage.get("RR")
@@ -23,6 +24,3 @@ qubit_configpath = configfolder / "qubit.yml"
 qubit = Qubit(name="QUBIT", lo_name="lo_qubit", ports={"I": 3, "Q": 4})
 with Stage(qubit, configpath=qubit_configpath) as stage:
     pass
-
-# %% collect all configpaths
-CONFIGPATHS = [readout_configpath]
