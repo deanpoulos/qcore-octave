@@ -1,4 +1,6 @@
 """ """
+from typing import Any
+
 from qm import qua
 
 from qcore.elements.rf_switch import RFSwitch
@@ -32,9 +34,20 @@ class Element(Resource):
         self._mixer_offsets: dict[str, float] = dict.fromkeys(self.OFFSETS_KEYS, 0.0)
         self._rf_switch: RFSwitch = None
         self._rf_switch_on: bool = False
-        self._operations: list[Pulse] = []
+        self._operations: dict[str, Pulse] = {}
 
         super().__init__(name=name, ports=ports, **parameters)
+
+    def snapshot(self) -> dict[str, Any]:
+        """ """
+        snapshot = super().snapshot()
+        operations = snapshot["operations"]
+        flat_operations = {name: pulse.snapshot() for name, pulse in operations.items()}
+        snapshot["operations"] = flat_operations
+        rf_switch = snapshot["rf_switch"]
+        if rf_switch is not None:
+            snapshot["rf_switch"] = rf_switch.snapshot()
+        return snapshot
 
     @property
     def ports(self) -> dict[str, int]:
@@ -111,55 +124,46 @@ class Element(Resource):
             self._rf_switch_on = bool(value)
 
     @property
-    def operations(self) -> list[Pulse]:
+    def operations(self) -> dict[str, Pulse]:
         """ """
         return self._operations.copy()
 
     @operations.setter
-    def operations(self, value: list[Pulse]) -> None:
+    def operations(self, value: dict[str, Pulse]) -> None:
         """ """
         try:
-            for pulse in value:
+            for pulse in value.values():
                 if not isinstance(pulse, Pulse):
                     raise ValueError(f"Invalid value '{pulse}', must be of {Pulse}")
         except TypeError:
-            raise ValueError(f"Setter expects {list[Pulse]}.") from None
-
-        operation_names = {operation.name for operation in value}
-        if len(operation_names) != len(value):
-            raise ValueError(f"All Pulses must have a unique name in '{value}'.")
+            raise ValueError(f"Setter expects {dict[str, Pulse]}.") from None
 
         if value:
             self._operations = value
-            logger.debug(f"Set {self} ops: {operation_names}.")
+            logger.debug(f"Set {self} operations '{list(value.keys())}'.")
 
-    def add_operations(self, *value: Pulse) -> None:
+    def add_operations(self, **operations) -> None:
         """ """
-        try:
-            self.operations = [*self._operations, *value]
-        except TypeError:
-            raise ValueError(f"Setter expects {Pulse}.") from None
+        self.operations = {**self._operations, **operations}
 
     def remove_operations(self, *names: str) -> None:
         """ """
-        operation_dict = {operation.name: operation for operation in self._operations}
-        for name in names:
-            if name in operation_dict:
-                self._operations.remove(operation_dict[name])
-                logger.debug(f"Removed {self} operation named '{name}'.")
+        for key in names:
+            if key in self._operations.keys():
+                operation = self._operations[key]
+                del self._operations[key]
+                logger.debug(f"Removed {self} '{key}' {operation = }.")
             else:
-                logger.warning(f"Operation '{name}' does not exist for {self}")
+                logger.warning(f"Operation '{key}' does not exist for {self}")
 
     def get_operations(self, *names: str) -> list[Pulse]:
         """ """
-        operation_dict = {operation.name: operation for operation in self._operations}
-        return [operation_dict[name] for name in names if name in operation_dict]
+        return [self._operations[key] for key in names if key in self._operations]
 
-    
     def play(self, key: str, ampx=1.0, phase=0.0, **kwargs) -> None:
         """ """
-        if key not in {pulse.name for pulse in self._operations}:
-            logger.error(f"No operation named {key} defined for {self}")
+        if key not in self._operations.keys():
+            logger.error(f"No operation named '{key}' defined for {self}")
             raise RuntimeError(f"Failed to play Mode operation named '{key}'")
 
         try:

@@ -1,6 +1,6 @@
 """ """
 
-from typing import Union
+from typing import Any, Union
 
 from qcore.helpers.logger import logger
 
@@ -61,3 +61,11 @@ class Pulse(Resource):
             raise ValueError(f"Invalid {value = }, must be {DigitalWaveform}.")
         self._digital_marker = value
         logger.debug(f"Set {self} digital marker to {value}.")
+
+    def snapshot(self) -> dict[str, Any]:
+        """ """
+        snapshot = super().snapshot()
+        digital_marker = snapshot["digital_marker"]
+        if digital_marker is not None:
+            snapshot["digital_marker"] = digital_marker.snapshot()
+        return snapshot

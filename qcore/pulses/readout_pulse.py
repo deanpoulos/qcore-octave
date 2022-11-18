@@ -23,7 +23,8 @@ class ReadoutPulse(Pulse):
     ) -> None:
         """ """
         # for constant Weights, specify tuple (i_cos, i_sin, q_cos, q_sin)
-        # for optimized Weights, specify path string to npz file
+        # for optimized Weights, specify path string to npz file which must have
+        # two arrays named "I" and "Q" which store cosine and sine weights respectively
         self.weights = weights
         self.threshold = threshold
         super().__init__(name=name, **parameters)
@@ -39,7 +40,7 @@ class ReadoutPulse(Pulse):
     def sample_integration_weights(self) -> tuple[dict[str, list], dict[str, list]]:
         """ """
         if self.has_optimized_weights:
-            weights = np.load(self.weights)  # assume these are the correct length
+            weights = np.load(self.weights)
             cos_weights = {"cosine": weights["I"][0], "sine": weights["I"][1]}
             sin_weights = {"cosine": weights["Q"][0], "sine": weights["Q"][1]}
         else:

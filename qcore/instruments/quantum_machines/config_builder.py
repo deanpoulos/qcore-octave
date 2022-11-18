@@ -19,10 +19,7 @@ class QMConfigBuildingError(Exception):
 
 
 class QMConfig(defaultdict):
-    """
-    https://qm-docs.qualang.io/introduction/config
-    Single controller
-    """
+    """https://qm-docs.qualang.io/introduction/config"""
 
     CONTROLLER_NAME: str = "con1"
     MIN_OUTPUT_PORTS: int = 1
@@ -50,14 +47,14 @@ class QMConfig(defaultdict):
         """ """
         self["version"] = 1
 
-    def set_ports(self, mode: Element) -> None:
+    def set_ports(self, element: Element) -> None:
         """ """
         self.set_controllers()
-        ports = mode.ports
+        ports = element.ports
         for port_key, port_num in ports.items():
             if port_num is not None:
-                self.set_controller_port(mode, port_key, port_num)
-                self.set_element_port(mode, port_key, port_num)
+                self.set_controller_port(element, port_key, port_num)
+                self.set_element_port(element, port_key, port_num)
 
     def set_intermediate_frequency(self, name: str, value: float) -> None:
         """ """
@@ -71,9 +68,9 @@ class QMConfig(defaultdict):
         self["elements"][name]["mixInputs"]["lo_frequency"] = lo_freq
         logger.debug(f"Set {name} {lo_freq = }.")
 
-    def set_mixer(self, mode: Element, int_freq: float, lo_freq: float) -> None:
+    def set_mixer(self, element: Element, int_freq: float, lo_freq: float) -> None:
         """ """
-        ports, offsets = mode.ports, mode.mixer_offsets
+        ports, offsets = element.ports, element.mixer_offsets
         mixer_name = f"mixer_{ports['I']}{ports['Q']}"
 
         mixer_correction_matrix = self.get_correction_matrix(offsets["G"], offsets["P"])
@@ -88,8 +85,8 @@ class QMConfig(defaultdict):
         else:
             self["mixers"][mixer_name] = [mixer_config]
 
-        self["elements"][mode.name]["mixInputs"]["mixer"] = mixer_name
-        logger.debug(f"Set {mode} {mixer_config = }.")
+        self["elements"][element.name]["mixInputs"]["mixer"] = mixer_name
+        logger.debug(f"Set {element} {mixer_config = }.")
 
     def set_time_of_flight(self, name: str, value: int) -> None:
         """ """
@@ -108,13 +105,12 @@ class QMConfig(defaultdict):
         self["elements"][name]["smearing"] = smearing
         logger.debug(f"Set {name} {smearing = }.")
 
-    def set_operations(self, mode: Element) -> None:
+    def set_operations(self, element: Element) -> None:
         """ """
-        ops = mode.operations
-        for op in ops:
-            pulse_name = mode.name + "." + op.name
-            self["elements"][mode.name]["operations"][op.name] = pulse_name
-            self.set_pulse(op, pulse_name)
+        for op_name, pulse in element.operations.items():
+            pulse_name = element.name + "." + pulse.name
+            self["elements"][element.name]["operations"][op_name] = pulse_name
+            self.set_pulse(pulse, pulse_name)
 
     def cast(self, value: Any, cls: Any, key: str) -> Any:
         """ """
@@ -174,19 +170,19 @@ class QMConfig(defaultdict):
         """ """
         self["controllers"][QMConfig.CONTROLLER_NAME]["type"] = "opx1"
 
-    def set_controller_port(self, mode: Element, port_key: str, port_num: int) -> None:
+    def set_controller_port(self, element: Element, key: str, port_num: int) -> None:
         """ """
-        dc_offset = mode.mixer_offsets[port_key]
+        dc_offset = element.mixer_offsets[key]
         self.check_voltage_bounds(dc_offset, "DC offset voltage")
 
-        if port_key in ("I", "Q"):
+        if key in ("I", "Q"):
             self.set_analog_output_port(port_num, dc_offset)
-        elif port_key == "out":
+        elif key == "out":
             self.set_analog_input_port(port_num, dc_offset)
         else:
-            raise ValueError(f"Invalid {port_key = }, must be in ('I', 'Q', 'out').")
+            raise ValueError(f"Invalid port {key = }, must be in ('I', 'Q', 'out').")
 
-        rf_switch = mode.rf_switch
+        rf_switch = element.rf_switch
         if rf_switch is not None:
             self.set_digital_output_port(rf_switch.port)
 
@@ -211,26 +207,24 @@ class QMConfig(defaultdict):
         controllers_config["digital_outputs"][number] = {}
         logger.debug(f"Set controller digital output port {number = }.")
 
-    def set_element_port(self, mode: Element, key: str, number: int) -> None:
+    def set_element_port(self, element: Element, key: str, number: int) -> None:
         """ """
         if key not in Readout.PORTS_KEYS:
             raise ValueError(f"Invalid port {key = }, must be in {Readout.PORTS_KEYS}.")
 
-        element_config = self["elements"][mode.name]
+        element_config = self["elements"][element.name]
         port_config = (QMConfig.CONTROLLER_NAME, number)
         if key == "out":
             element_config["outputs"][key + str(number)] = port_config
-        elif key in ("I", "Q") and mode.has_mixed_inputs():
+        elif key in ("I", "Q") and element.has_mixed_inputs():
             element_config["mixInputs"][key] = port_config
         elif key == "I":
             element_config["singleInput"]["port"] = port_config
         else:
-            raise ValueError(f"Invalid port {key = } and {number = } for {mode}.")
-        logger.debug(f"Set '{mode.name}' port {key = } and {number = }.")
+            raise ValueError(f"Invalid port {key = } and {number = } for {element}.")
+        logger.debug(f"Set '{element.name}' port {key = } and {number = }.")
 
-    def get_correction_matrix(
-        self, g: float, p: float
-    ) -> list[float, float, float, float]:
+    def get_correction_matrix(self, g: float, p: float) -> list[float]:
         """ """
         try:
             cos, sin = np.cos(p), np.sin(p)
@@ -267,10 +261,9 @@ class QMConfig(defaultdict):
             self.set_digital_waveform(digital_marker, marker_name)
 
         if pulse_type == "measurement" and pulse.has_mixed_waveforms():
-            iw_cos_name = pulse_name + "." + "cos"
-            iw_sin_name = pulse_name + "." + "sin"
-            pulse_config["integration_weights"][iw_cos_name] = iw_cos_name
-            pulse_config["integration_weights"][iw_sin_name] = iw_sin_name
+            iw_cos_name, iw_sin_name = pulse_name + ".cos", pulse_name + ".sin"
+            pulse_config["integration_weights"]["cos"] = iw_cos_name
+            pulse_config["integration_weights"]["sin"] = iw_sin_name
             self.set_integration_weights(pulse, iw_cos_name, iw_sin_name)
 
     def set_pulse_length(self, name: str, value: int) -> None:
@@ -338,16 +331,16 @@ class QMConfigBuilder:
     def __init__(self) -> None:
         """ """
         self._config: QMConfig = None  # built by build_config()
-        self._modes: tuple[Element] = None
+        self._elements: tuple[Element] = None
         self._lo_frequencies: dict[str, float] = {}
 
-    def build_config(self, modes: tuple[Element], los: tuple[LMS]) -> QMConfig:
+    def build_config(self, elements: tuple[Element], los: tuple[LMS]) -> QMConfig:
         """ """
         try:
-            self._check_modes(*modes)
+            self._check_elements(*elements)
             self._check_local_oscillators(*los)
         except TypeError:
-            message = f"Expect tuple arguments for 'modes' and 'los'."
+            message = f"Expect tuple arguments for 'elements' and 'los'."
             raise QMConfigBuildingError(message) from None
         else:
             self._config = QMConfig()
@@ -356,40 +349,40 @@ class QMConfigBuilder:
 
     def _build_config(self) -> None:
         """ """
-        config, modes, lo_freqs = self._config, self._modes, self._lo_frequencies
+        config, elements, lo_freqs = self._config, self._elements, self._lo_frequencies
         config.set_version()
         config.set_controllers()
-        for mode in modes:
-            config.set_ports(mode)
-            config.set_intermediate_frequency(mode.name, mode.int_freq)
+        for element in elements:
+            config.set_ports(element)
+            config.set_intermediate_frequency(element.name, element.int_freq)
 
-            if mode.has_mixed_inputs():
-                if mode.lo_name not in lo_freqs:
-                    message = f"No LO frequency specified for {mode = }."
+            if element.has_mixed_inputs():
+                if element.lo_name not in lo_freqs:
+                    message = f"No LO frequency specified for {element = }."
                     raise QMConfigBuildingError(message)
-                lo_freq = lo_freqs[mode.lo_name]
-                config.set_lo_frequency(mode.name, lo_freq)
-                config.set_mixer(mode, mode.int_freq, lo_freq)
+                lo_freq = lo_freqs[element.lo_name]
+                config.set_lo_frequency(element.name, lo_freq)
+                config.set_mixer(element, element.int_freq, lo_freq)
 
-            if isinstance(mode, Readout):
-                config.set_time_of_flight(mode.name, mode.time_of_flight)
-                config.set_smearing(mode.name, mode.smearing)
+            if isinstance(element, Readout):
+                config.set_time_of_flight(element.name, element.time_of_flight)
+                config.set_smearing(element.name, element.smearing)
 
-            config.set_operations(mode)
+            config.set_operations(element)
 
-    def _check_modes(self, *modes: Element) -> None:
+    def _check_elements(self, *elements: Element) -> None:
         """ """
-        mode_names = []
-        for mode in modes:
-            if not isinstance(mode, Element):
-                message = f"Invalid {mode = }, must be of {Element}."
+        element_names = []
+        for element in elements:
+            if not isinstance(element, Element):
+                message = f"Invalid {element = }, must be of {Element}."
                 raise QMConfigBuildingError(message)
-            name = mode.name
-            if name in mode_names:
-                message = f"Found duplicate mode {name = }, mode names must be unique."
+            name = element.name
+            if name in element_names:
+                message = (f"Found duplicate element {name = }, names must be unique.")
                 raise QMConfigBuildingError(message)
-            mode_names.append(name)
-        self._modes = modes
+            element_names.append(name)
+        self._elements = elements
 
     def _check_local_oscillators(self, *los: LMS) -> None:
         """ """

@@ -11,10 +11,10 @@ class Qubit(Element):
     def __init__(self, **parameters) -> None:
         """ """
         if "operations" not in parameters:
-            default_operations = [
-                ConstantPulse("constant_pulse"),
-                GaussianPulse("gaussian_pulse"),
-            ]
+            default_operations = {
+                "saturation": ConstantPulse("constant_pulse"),
+                "pi": GaussianPulse("gaussian_pulse"),
+            }
             parameters["operations"] = default_operations
 
         super().__init__(**parameters)

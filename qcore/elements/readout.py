@@ -28,12 +28,12 @@ class Readout(Element):
         self.smearing: int = smearing
 
         if "operations" not in parameters:
-            default_operations = [
-                ConstantPulse("constant_pulse"),
-                ConstantReadoutPulse(
+            default_operations = {
+                "saturation": ConstantPulse("constant_pulse"),
+                "readout": ConstantReadoutPulse(
                     "readout_pulse", digital_marker=DigitalWaveform("ADC_ON")
                 ),
-            ]
+            }
             parameters["operations"] = default_operations
 
         super().__init__(**parameters)
@@ -47,14 +47,10 @@ class Readout(Element):
         demod_args: tuple = None,
     ) -> None:
         """ """
-        key = "readout_pulse"  # TODO relax hard coding
-        iw_key_i = self.name + "." + key + ".cos"
-        iw_key_q = self.name + "." + key + ".sin"
-
         var_i, var_q = targets
 
         if demod_type == "full":
-            output_i, output_q = (iw_key_i, var_i), (iw_key_q, var_q)
+            output_i, output_q = ("cos", var_i), ("sin", var_q)
             demod_i, demod_q = qua.demod.full(*output_i), qua.demod.full(*output_q)
         else:
             try:
@@ -63,15 +59,19 @@ class Readout(Element):
                 logger.error(f"Unrecognized demod type '{demod_type}'")
                 raise
             else:
-                output_i = (iw_key_i, var_i, *demod_args)
-                output_q = (iw_key_q, var_q, *demod_args)
+                output_i = ("cos", var_i, *demod_args)
+                output_q = ("sin", var_q, *demod_args)
                 demod_i, demod_q = demod_method(*output_i), demod_method(*output_q)
 
         try:
-            qua.measure(key * qua.amp(ampx), self.name, stream, demod_i, demod_q)
-        except Exception:  # QM forced me to catch base class Exception...
-            try:
-                qua.measure(key * qua.amp(*ampx), self.name, stream, demod_i, demod_q)
-            except Exception:  # QM forced me to catch base class Exception...
-                logger.error("Invalid ampx, expect 1 value or sequence of 4 values")
-                raise
+            num_ampxs = len(ampx)
+            if num_ampxs != 4:
+                logger.error("Ampx must be a sequence of 4 values")
+                raise ValueError(f"Invalid ampx value count, expect 4, got {num_ampxs}")
+        except TypeError:
+            num_ampxs = 1
+
+        if num_ampxs == 1:
+            qua.measure("readout" * qua.amp(ampx), self.name, stream, demod_i, demod_q)
+        else:
+            qua.measure("readout" * qua.amp(*ampx), self.name, stream, demod_i, demod_q)
