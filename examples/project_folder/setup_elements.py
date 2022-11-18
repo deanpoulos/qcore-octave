@@ -2,7 +2,7 @@
 
 # %% define configfolder and configfile
 from pathlib import Path
-configfolder = Path.cwd() / "examples/project_folder"
+configfolder = Path.cwd()
 
 # %% update existing readout element parameters
 from qcore.helpers.stage import Stage
@@ -19,8 +19,12 @@ with Stage(readout_configpath) as stage:
     readout_pulse.I_ampx = 0.2
 
 # %% create new element and save it to yml by staging it with a given configpath
-from qcore.elements import Qubit
-qubit_configpath = configfolder / "qubit.yml"
-qubit = Qubit(name="QUBIT", lo_name="lo_qubit", ports={"I": 3, "Q": 4})
-with Stage(qubit, configpath=qubit_configpath) as stage:
+from qcore.helpers.stage import Stage
+from qcore.elements import Qubit, Readout
+configpath = configfolder / "elements.yml"
+qubit = Qubit(name="QUBIT", lo_name="LO_QUBIT", ports={"I": 1, "Q": 2})
+readout = Readout(name="RR", lo_name="LO_RR", ports={"I": 3, "Q": 4})
+with Stage(qubit, readout, configpath=configpath) as stage:
     pass
+
+# %%
