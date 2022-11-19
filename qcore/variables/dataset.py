@@ -18,10 +18,12 @@ class Dataset(Variable):
         dtype: str = "f4",  # dtype used to save dataset
         units: str = None,  # units attribute sweep points dataset is saved with
         data: np.ndarray = None,  # initial data for this dataset
+        index = None,  # to indicate the index of current data assigned to Dataset
         var_type: type = None,
         create_stream: bool = True,
         is_adc: bool = False,
-        save: bool = False,  # whether or not to save this Dataset to a datafile
+        to_save: bool = False,  # whether or not to save this Dataset to a datafile
+        to_plot: bool = False,  # whether or not to plot this Dataset during live plot
     ) -> None:
         """ """
         super().__init__(name, var_type, create_stream, is_adc)
@@ -29,11 +31,13 @@ class Dataset(Variable):
         self.name = name
         self.dtype = dtype
         self.units = units
-        self.save = save
+        self.to_save = to_save
+        self.to_plot = to_plot
 
-        # the current batch of data assigned to this dataset
+        # the current batch of data assigned to this dataset at given index
         # can be used during live fetching to store intermediate values for analysis
         self.data: np.ndarray = data
+        self.index = index
 
     @property
     def shape(self) -> list[int]:
@@ -43,5 +47,5 @@ class Dataset(Variable):
     @property
     def metadata(self) -> dict:
         """ """
-        x = ("data", "axes", "var_type", "save")  # excluded keys
+        x = ("data", "axes", "var_type", "save", "index")  # excluded keys
         return {k: v for k, v in self.__dict__.items() if k not in x and v is not None}
