@@ -101,18 +101,18 @@ class Experiment:
         return self._filepath
 
     def _get_metadata(self) -> dict:
-        """ """
+        """ # TODO CHECK FOR COMPATIBILITY WITH KYLE'S CODE """
         resources = [v for v in self.__dict__.values() if isinstance(v, Resource)]
-        metadata = {resource.name: resource.snapshot() for resource in resources}
+        resource_metadata = {res.name: res.snapshot(flatten=True) for res in resources}
 
         xcls = (Resource, Sweep, Dataset)  # excluded classes
-        xkeys = ("datasaver", "plotter")  # excluded keys
+        xkeys = ("sweep_order")  # excluded keys
         snapshot = {}
         for k, v in self.__dict__.items():
             if not isinstance(v, xcls) and not k.startswith("_") and not k in xkeys:
                 snapshot[k] = v
 
-        return {**metadata, None: snapshot}
+        return {**resource_metadata, None: snapshot}
 
     def _construct_sweep_order(self) -> None:
         """
@@ -203,11 +203,12 @@ class Experiment:
         self.qm = self._get_qm()
 
         # TODO initialize default Sweep and Datasets with save & plot flags
-        to_save, to_plot, datasets = [], [], self._datasets  # TODO
+        datasets = [v for v in self.__dict__.values() if isinstance(v, Dataset)]
+        to_save, to_plot = [], []
         if save is True:  # save all
             to_save = datasets
         elif save is None:  # default
-            to_save = [dataset for dataset in datasets if dataset.save]
+            to_save = [dataset for dataset in datasets if dataset.to_save]
         elif all(isinstance(dataset, Dataset) for dataset in save): # save given
             to_save = save
         # TODO error handling
@@ -215,31 +216,36 @@ class Experiment:
         if plot is True:
             to_plot = datasets
         elif plot is None:
-            to_plot =  [dataset for dataset in datasets if dataset.plot]
+            to_plot =  [dataset for dataset in datasets if dataset.to_plot]
         elif all(isinstance(dataset, Dataset) for dataset in plot): # plot given
             to_plot = plot
-        # TODO REMEMBER the to_save and to_plot attributes for process_data()
 
-        self.datasaver = Datasaver(self._get_filepath(), *to_save)
-        self.plotter = Plotter(*to_plot)
+        datasaver = Datasaver(self._get_filepath(), *to_save)
+        plotter = Plotter(self.fetch_interval, *to_plot)
 
         self.qm.execute(self.construct_pulse_sequence())
 
         time.sleep(self.fetch_interval)
 
-        with self.datasaver as datasaver:
+        with datasaver:
             datasaver.save_metadata(self._get_metadata())
             while self.qm.is_processing():
                 # fetch latest batch of partial data along with data counts
                 data, current_count, last_count = self.qm.fetch()
                 if data:  # empty dict means no new results available
-                    self.process_data(datasaver, data, current_count, last_count)
+                    # process_data() must allocate incoming data to Dataset for live saving and plotting
+                    self.process_data(data, current_count, last_count)
+                    for dataset in to_save:
+                        datasaver.save_data(dataset)
+                    plotter.plot_data(current_count)
                 time.sleep(self.fetch_interval)
 
-    def process_data(self, datasaver, data, current_count, last_count):
+    def process_data(self, data, current_count, last_count):
+        """ TO ALLOCATE INCOMING DATA TO DATASETS AT CORRECT INDEX """
         # TODO implement default method with following convention:
-        # get a dict with key = name and value = Dataset that is to be saved / plotted for this expt's datasets
-        # default index = (slice(last_count, current_count), slice(None, None)) - the : slice is to be repeated D - 1 times where D is the expt's dimensionality
-        # datasaver.save_data(dataset, data[dataset.name], index=index) for each Dataset to be saved
-        # plotter.plot_data(dataset, data[dataset.name], **plot_kwargs) for each Dataset to be plotted
+        # get a "dataset" dict with key = name and value = Dataset that is to be saved / plotted for this experimental run
+        # set data attribute of each dataset in "dataset" dict with value (if available) in incoming "data" dict.
+        # default index = (slice(last_count, current_count), slice(None, None) * D-1) where the : slice is repeated D - 1 times where D is the expt's dimensionality
+        # the above 2 steps are for raw data. for derived data, the default datasets are - IQ_avg, magnitude_avg, and phase_avg, and these are calculated using a weighted average of incoming and previous data (with initial data = zeros)
+        # user can easily override this function to change data processing behaviour without having to worry about using the datasaver and plotter and qm fetcher !!
         raise NotImplementedError
