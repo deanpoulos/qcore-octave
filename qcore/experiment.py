@@ -1,6 +1,6 @@
 import time
 from datetime import datetime
-from typing import List
+from typing import Union
 from pathlib import Path
 
 from qm.qua import program, stream_processing
@@ -29,8 +29,8 @@ class Experiment:
     wait_time: int
     wait_element: str
     fetch_interval: int
-    sweep_order: List[Sweep]
-    _exp_vars: List[Variable]
+    sweep_order: list[Sweep]
+    _exp_vars: list[Variable]
 
     # saving and plotting config
     _filepath: str
@@ -54,6 +54,7 @@ class Experiment:
         self.element_names = element_names
         self._elements: list[Element] = None  # will be set on call to get_elements()
 
+        self._local_oscillators = None  # will be set on run() by _get_qm()
         self.qm: QM = None  # will be set on run() by _get_qm()
 
         self.repetitions = repetitions
@@ -65,13 +66,10 @@ class Experiment:
         self._exp_vars = None
 
     # -------------------------------------------------------------------------
-    # User define methods
+    # User defined methods
     # -------------------------------------------------------------------------
 
     def pulse_sequence(self):
-        raise NotImplementedError
-
-    def process_data(self):
         raise NotImplementedError
 
     # -------------------------------------------------------------------------
@@ -89,8 +87,8 @@ class Experiment:
         """ """
         lo_names = (element.lo_name for element in self._elements)
         with Stage(remote=True) as remote_stage:
-            local_oscillators = remote_stage.get(*lo_names)
-        return QM(elements=self._elements, oscillators=local_oscillators)
+            self._local_oscillators = remote_stage.get(*lo_names)
+        return QM(elements=self._elements, oscillators=self._local_oscillators)
 
     def _get_filepath(self) -> Path:
         """ """
@@ -200,12 +198,30 @@ class Experiment:
 
         return qua_prog
 
-    def run(self, save: tuple = (), plot: tuple = ()) -> None:
+    def run(self, save: Union[bool, tuple] = None, plot: Union[bool, tuple] = None) -> None:
         """ """
         self.qm = self._get_qm()
 
-        self.datasaver = Datasaver(self._get_filepath(), *save)
-        self.plotter = Plotter(*plot)
+        # TODO initialize default Sweep and Datasets with save & plot flags
+        to_save, to_plot, datasets = [], [], self._datasets  # TODO
+        if save is True:  # save all
+            to_save = datasets
+        elif save is None:  # default
+            to_save = [dataset for dataset in datasets if dataset.save]
+        elif all(isinstance(dataset, Dataset) for dataset in save): # save given
+            to_save = save
+        # TODO error handling
+
+        if plot is True:
+            to_plot = datasets
+        elif plot is None:
+            to_plot =  [dataset for dataset in datasets if dataset.plot]
+        elif all(isinstance(dataset, Dataset) for dataset in plot): # plot given
+            to_plot = plot
+        # TODO REMEMBER the to_save and to_plot attributes for process_data()
+
+        self.datasaver = Datasaver(self._get_filepath(), *to_save)
+        self.plotter = Plotter(*to_plot)
 
         self.qm.execute(self.construct_pulse_sequence())
 
@@ -219,3 +235,11 @@ class Experiment:
                 if data:  # empty dict means no new results available
                     self.process_data(datasaver, data, current_count, last_count)
                 time.sleep(self.fetch_interval)
+
+    def process_data(self, datasaver, data, current_count, last_count):
+        # TODO implement default method with following convention:
+        # get a dict with key = name and value = Dataset that is to be saved / plotted for this expt's datasets
+        # default index = (slice(last_count, current_count), slice(None, None)) - the : slice is to be repeated D - 1 times where D is the expt's dimensionality
+        # datasaver.save_data(dataset, data[dataset.name], index=index) for each Dataset to be saved
+        # plotter.plot_data(dataset, data[dataset.name], **plot_kwargs) for each Dataset to be plotted
+        raise NotImplementedError

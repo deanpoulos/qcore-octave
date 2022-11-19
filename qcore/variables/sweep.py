@@ -26,6 +26,7 @@ class Sweep(Variable):
         include_endpoint: bool = True,  # whether or not to include end point in sweep
         num: int = None,  # number of points in sweep
         kind: str = "lin",  # "lin" or "log" (base 10) sweep
+        save: bool = True,  # whether or not to save this Sweep to a datafile
     ) -> None:
         """ """
         super().__init__(name, var_type, create_stream, is_adc)
@@ -40,6 +41,7 @@ class Sweep(Variable):
         self.include_endpoint = include_endpoint
         self.num = num
         self.kind = kind
+        self.save = save
 
     @property
     def data(self) -> np.ndarray:
@@ -82,7 +84,7 @@ class Sweep(Variable):
     @property
     def metadata(self) -> dict:
         """ """
-        x = ("points", "var_type")  # excluded keys
+        x = ("points", "var_type", "save")  # excluded keys
         metadata = {}
         for k, v in self.__dict__.items():
             if isinstance(v, Sweep):

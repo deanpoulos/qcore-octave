@@ -21,6 +21,7 @@ class Dataset(Variable):
         var_type: type = None,
         create_stream: bool = True,
         is_adc: bool = False,
+        save: bool = False,  # whether or not to save this Dataset to a datafile
     ) -> None:
         """ """
         super().__init__(name, var_type, create_stream, is_adc)
@@ -28,6 +29,7 @@ class Dataset(Variable):
         self.name = name
         self.dtype = dtype
         self.units = units
+        self.save = save
 
         # the current batch of data assigned to this dataset
         # can be used during live fetching to store intermediate values for analysis
@@ -41,5 +43,5 @@ class Dataset(Variable):
     @property
     def metadata(self) -> dict:
         """ """
-        x = ("data", "axes", "var_type")  # excluded keys
+        x = ("data", "axes", "var_type", "save")  # excluded keys
         return {k: v for k, v in self.__dict__.items() if k not in x and v is not None}
