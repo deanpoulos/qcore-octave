@@ -137,11 +137,8 @@ class Stage:
             else:
                 logger.warning(f"Resource with '{name = }' does not exist on Stage.")
 
-    def get(self, *names: str) -> Resource | list[Resource]:
+    def get(self, *names: str) -> list[Resource]:
         """ """
-        if len(names) == 1 and names[0] in self._resources:
-            return self._resources[names[0]]
-
         resources = []
         for name in names:
             if name in self._resources:

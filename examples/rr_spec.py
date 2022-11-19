@@ -12,7 +12,8 @@ from qcore.elements import Readout
 
 class RR_Spec(Experiment):
     def __init__(self, readout: str, **kwargs):
-        (self.rr,) = self.get_resources(readout)
+        super().__init__("rr_spec", readout, wait_element=readout, **kwargs)
+        (self.rr,) = self._get_elements()
 
 
 experiment_parameters = {
@@ -24,9 +25,7 @@ experiment_parameters = {
     "repetitions": 100,
     # wait time between successive repetitions of the experiment's pulse sequence
     "wait_time": 20000,  # in nanoseconds
-    # wait time between successive calls to fetch data during live save/plot
-    "fetch_interval": 1,  # in seconds
 }
 
 experiment = RR_Spec(**experiment_parameters)
-# experiment.run(save=(expt.I, expt.Q), plot=(expt.iq_avg, expt.magnitude, expt.phase))
+experiment.run()

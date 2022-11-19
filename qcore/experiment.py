@@ -10,6 +10,7 @@ from qcore.instruments import QM
 from qcore.elements.element import Element
 from qcore.helpers.datasaver import Datasaver
 from qcore.helpers.plotter import Plotter
+from qcore.helpers.stage import Stage
 from qcore.resource import Resource
 from qcore.sequences.constructors import construct_sweep
 from qcore.helpers.logger import logger
@@ -22,44 +23,46 @@ class Experiment:
     """
 
     # experiment parameters
-    fetch_interval: int
     name: str
-    num_reps: int
-    qm: QM
-    sweep_order: List[Sweep]
-    wait_element: Element
+    element_names: list[str]
+    repetitions: int
     wait_time: int
+    wait_element: str
+    fetch_interval: int
+    sweep_order: List[Sweep]
     _exp_vars: List[Variable]
 
     # saving and plotting config
     _filepath: str
-    _nametag: str
-    _savefolder: Path
+    _project_folder: Path
 
     def __init__(
         self,
         name: str,
-        reps: int,
-        qm: QM,
-        wait_element: Element,
-        wait_time_ns: int,
-        savefolder: Path,
-        nametag: str = "",
-        fetch_interval: int = 1,
+        project_folder: Path,
+        *element_names: str,
+        repetitions: int,
+        wait_time: int,
+        wait_element: str,
+        fetch_interval: int = 2,
     ):
-
-        self.fetch_interval = fetch_interval
         self.name = name
-        self.num_reps = reps
-        self.qm = qm
-        self.sweep_order = None
-        self.wait_element = wait_element
-        self.wait_time = wait_time_ns
-        self._exp_vars = None
 
-        self._filepath = None
-        self._nametag = nametag
-        self._savefolder = savefolder
+        self._project_folder = project_folder
+        self._filepath: Path = None  # will be set on run() with call to get_filepath()
+
+        self.element_names = element_names
+        self._elements: list[Element] = None  # will be set on call to get_elements()
+
+        self.qm: QM = None  # will be set on run() by _get_qm()
+
+        self.repetitions = repetitions
+        self.wait_time = wait_time
+        self.wait_element = wait_element
+        self.fetch_interval = fetch_interval
+
+        self.sweep_order = None
+        self._exp_vars = None
 
     # -------------------------------------------------------------------------
     # User define methods
@@ -75,25 +78,31 @@ class Experiment:
     # Builtin methods
     # -------------------------------------------------------------------------
 
-    def get_filepath(self) -> Path:
+    def _get_elements(self) -> list[Element]:
+        """ """
+        configpath = self._project_folder / "elements.yml"
+        with Stage(configpath) as stage:
+            self._elements = stage.get(*self.element_names)
+        return self._elements.copy()
+
+    def _get_qm(self) -> QM:
+        """ """
+        lo_names = (element.lo_name for element in self._elements)
+        with Stage(remote=True) as remote_stage:
+            local_oscillators = remote_stage.get(*lo_names)
+        return QM(elements=self._elements, oscillators=local_oscillators)
+
+    def _get_filepath(self) -> Path:
         """ """
         if self._filepath is None:
             date, time = datetime.now().strftime("%Y-%m-%d %H-%M-%S").split()
-            folderpath = self._savefolder / date
-            filesuffix = f"_{self._nametag}" if self._nametag else ""
-            filename = f"{time}_{self.name}{filesuffix}.h5"
+            folderpath = self._project_folder / "data" / date
+            filename = f"{time}_{self.name}.hdf5"
             self._filepath = folderpath / filename
             logger.debug(f"Generated filepath {self._filepath} for '{self.name}'")
         return self._filepath
 
-    def snapshot(self) -> dict:
-        """
-        snapshot includes instance attributes that do not start with "_" are
-        are not instances of excluded classes - Resource, Sweep, Dataset,
-        DataSaver, LivePlotter
-        """
-
-    def get_metadata(self) -> dict:
+    def _get_metadata(self) -> dict:
         """ """
         resources = [v for v in self.__dict__.values() if isinstance(v, Resource)]
         metadata = {resource.name: resource.snapshot() for resource in resources}
@@ -118,7 +127,7 @@ class Experiment:
             name="N",
             var_type=int,
             start=0,
-            stop=self.num_reps,
+            stop=self.repetitions,
             step=1,
         )
 
@@ -193,16 +202,17 @@ class Experiment:
 
     def run(self, save: tuple = (), plot: tuple = ()) -> None:
         """ """
+        self.qm = self._get_qm()
 
-        self.datasaver = Datasaver(self.get_filepath(), *save)
-        # self.plotter = Plotter(*plot)
+        self.datasaver = Datasaver(self._get_filepath(), *save)
+        self.plotter = Plotter(*plot)
 
         self.qm.execute(self.construct_pulse_sequence())
 
         time.sleep(self.fetch_interval)
 
         with self.datasaver as datasaver:
-            datasaver.save_metadata(self.get_metadata())
+            datasaver.save_metadata(self._get_metadata())
             while self.qm.is_processing():
                 # fetch latest batch of partial data along with data counts
                 data, current_count, last_count = self.qm.fetch()
