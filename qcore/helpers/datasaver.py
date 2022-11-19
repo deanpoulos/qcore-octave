@@ -152,31 +152,26 @@ class Datasaver:
             logger.error(message)
             raise DataSavingError(message)
 
-    def save_data(
-        self,
-        dataset: Union[Dataset, Sweep],
-        data: np.ndarray,
-        index: tuple[Union[int, slice, ellipsis]] = ...,
-    ) -> None:
-        """insert a batch of data to the dataset at (optional) specified index. please call this method within a datasaver context, if not it will throw error.
+    def save_data(self, dataset: Union[Dataset, Sweep]) -> None:
+        """insert a batch of data to the dataset at specified index. please call this method within a datasaver context, if not it will throw error. the dataset attributes 'data' and 'index' must be already configured prior to calling this method.
 
         with DataSaver(path_to_datafile, dataset_specification) as datasaver:
             # key-value pairs in metadata_dict will be stored as group_name group attributes in .h5 file
-            datasaver.save_metadata(group_name, **metadata_dict)
+            datasaver.save_metadata(metadataspec)
 
-            datasaver.save_data(name, incoming_data, [index])
+            datasaver.save_data(dataset)
 
         dataset: Dataset the dataset as declared in the dataspec. raises an error if we encounter a dataset that has not been declared prior to saving.
 
-        data: np.ndarray incoming data to be written into dataset
+        dataset.data: np.ndarray incoming data to be written into dataset
 
-        index = ... means that the incoming data is written to the entire dataset in one go i.e. we do dataset[...] = incoming_data. Use this when all the data to be saved is available in memory at the same time. this is the default option.
+        dataset.index = ... means that the incoming data is written to the entire dataset in one go i.e. we do dataset[...] = incoming_data. Use this when all the data to be saved is available in memory at the same time. this is the default option.
 
-        index = tuple[int | slice] means that you want to insert the incoming data to a specific location ("hyperslab") in the dataset. Use this while saving data that is being streamed in successive batches or in any other application that requires appending to existing dataset. we pass the index directly to h5py i.e. we do dataset[index] = incoming_data, so user must be familiar with h5py indexing convention to use this feature effectively. index must be a tuple (not list etc) to ensure proper saving behaviour. to ensure more explicit code and allow reliable tracking of written data, we also enforce that the index tuple dimensions match that of the dataset shape - so an ellipsis may only be used to populate one dimension, if you want to populate multiple dimensions, use slice(None, None) instead.
+        dataset.index = tuple[int | slice] means that you want to insert the incoming data to a specific location ("hyperslab") in the dataset. Use this while saving data that is being streamed in successive batches or in any other application that requires appending to existing dataset. we pass the index directly to h5py i.e. we do dataset[index] = incoming_data, so user must be familiar with h5py indexing convention to use this feature effectively. index must be a tuple (not list etc) to ensure proper saving behaviour. to ensure more explicit code and allow reliable tracking of written data, we also enforce that the index tuple dimensions match that of the dataset shape - so an ellipsis may only be used to populate one dimension, if you want to populate multiple dimensions, use slice(None, None) instead.
         """
         self._validate_session()
 
-        name = dataset.name
+        name, data, index = dataset.name, dataset.data, dataset.index
         # h5dset is a h5py Dataset, to distinguish it from our dataset
         h5dset = self._get_dataset(name)
         self._validate_index(name, h5dset, index)
