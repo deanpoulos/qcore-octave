@@ -50,10 +50,14 @@ class RR_Spec(Experiment):
 
         rr_spec(self.I, self.Q, self.rr, self.freq)
 
-    def process_data(self, datasaver, data, current_count, last_count):
+    def process_data(self, data, current_count, last_count):
         """this is INSIDE the fetch loop!!! use for live processing only!!!"""
         # while saving, assume sweep order and dimension and dataset axes order and dimension is consistent
         
+        #self.I.data = data["I"]
+        #self.I.index = (slice(last_count, current_count), slice(None, None)...)
+        #self.I_avg.data = weighted_average(data["I_avg"])
+        """
         # save frequency data
         datasaver.save_data(self.freq, data["freq"])
 
@@ -84,7 +88,7 @@ class RR_Spec(Experiment):
 
         # live plot datasets
         self.plotter.plot()
-
+        """
 
 if __name__ == "__main__":
 
