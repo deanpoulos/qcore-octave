@@ -67,7 +67,6 @@ class ServerWidget(qtw.QWidget):
         """ """
         self.config, self.server, self.instruments = defaultdict(list), None, None
         self.ui.instrument_types_list.setCurrentRow(0)
-        self.ui.staged_instruments_list.clear()
         self.show_instrument_id()
         self.toggle_teardown_button()
 
@@ -144,7 +143,8 @@ class ServerWidget(qtw.QWidget):
             logger.info("Server is ready!!! Connecting instruments...")
             qtc.QTimer.singleShot(500, self.link_instruments)
         else:
-            self.reset()
+            self.toggle_stage_button()
+            self.toggle_unstage_setup_buttons()
 
     def link_instruments(self) -> None:
         """ """
@@ -156,6 +156,7 @@ class ServerWidget(qtw.QWidget):
         """ """
         self.is_serving.emit(False)
         self.server.teardown()
+        self.ui.staged_instruments_list.clear()
         self.reset()
         logger.info("Tore down Server!!!")
 
