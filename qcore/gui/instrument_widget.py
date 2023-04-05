@@ -34,7 +34,6 @@ class InstrumentWidget(qtw.QWidget):
         self.fields = {"name": self.ui.name_field, "id": self.ui.id_field}
         self.create_parameters()
 
-
         for field in self.fields.values():
             field.returnPressed.connect(self.configure_instrument)
 
@@ -54,17 +53,16 @@ class InstrumentWidget(qtw.QWidget):
                 label = qtw.QLabel(self.ui.scroll_area_contents)
                 label.setText(name)
                 field = qtw.QLineEdit(self.ui.scroll_area_contents)
-                if param.is_settable():
+                if name in self.instrument_type.settable_params:
                     self.ui.settables_form.addRow(label, field)
-                elif param.is_gettable():
+                elif name in self.instrument_type.gettable_params:
                     self.ui.gettables_form.addRow(label, field)
                     field.setReadOnly(True)
                 self.fields[name] = field
 
     def refresh_instrument(self):
         """ """
-        snapshot, status = self.instrument.snapshot(), self.instrument.status
-        self.update_parameters(status, **snapshot)
+        self.update_parameters(**self.instrument.snapshot())
         logger.info(f"Updated instrument '{self.instrument.name}' parameters!!!")
 
     def update_parameters(self, status: bool, **snapshot):
