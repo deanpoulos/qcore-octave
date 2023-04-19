@@ -8,7 +8,7 @@ from PyQt5 import QtCore as qtc
 from qcore.gui.ui_instrument_widget import Ui_instrument_widget
 from qcore.helpers.logger import logger
 from qcore.instruments.instrument import Instrument, DummyInstrument, ConnectionError
-from qcore.instruments.vaunix.lms import LMS
+from qcore.instruments.drivers.vaunix_lms import LMS
 
 
 class InstrumentWidget(qtw.QWidget):

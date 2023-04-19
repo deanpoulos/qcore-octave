@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>900</width>
-    <height>300</height>
+    <width>960</width>
+    <height>523</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -189,7 +189,7 @@
       </layout>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="serve_buttons_layout" stretch="3,2,2,3">
+      <layout class="QVBoxLayout" name="serve_button_layout" stretch="3,2,3">
        <property name="spacing">
         <number>20</number>
        </property>
@@ -219,7 +219,7 @@
         </spacer>
        </item>
        <item>
-        <widget class="QPushButton" name="setup_button">
+        <widget class="QPushButton" name="serve_button">
          <property name="enabled">
           <bool>false</bool>
          </property>
@@ -230,28 +230,12 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Setup stage</string>
+          <string>Serve instrument(s)</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="teardown_button">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>Teardown stage</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="serve_buttons_bottom_spacer">
+        <spacer name="serve_button_bottom_spacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>

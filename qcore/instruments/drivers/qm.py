@@ -9,9 +9,9 @@ from qm.qua._dsl import _ProgramScope
 
 from qcore.helpers.logger import logger
 from qcore.instruments.instrument import Instrument, ConnectionError
-from qcore.instruments.quantum_machines.config_builder import QMConfigBuilder, QMConfig
-from qcore.instruments.quantum_machines.result_fetcher import QMResultFetcher
-from qcore.instruments.vaunix.lms import LMS
+from qcore.instruments.drivers.qm_config_builder import QMConfigBuilder, QMConfig
+from qcore.instruments.drivers.qm_result_fetcher import QMResultFetcher
+from qcore.instruments.drivers.vaunix_lms import LMS
 from qcore.elements.element import Element
 
 

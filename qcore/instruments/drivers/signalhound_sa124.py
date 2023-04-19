@@ -8,7 +8,7 @@ import numpy as np
 from qcore.helpers.logger import logger
 from qcore.instruments.instrument import Instrument, ConnectionError
 
-SA = CDLL(str(Path(__file__).parent / "sa124.dll"))
+SA = CDLL(str(Path(__file__).parent / "signalhound_sa124.dll"))
 
 SA.saGetErrorString.restype = c_char_p
 SA.saGetSweep_64f.argtypes = [

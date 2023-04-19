@@ -8,7 +8,7 @@ from qcore.instruments.instrument import Instrument, ConnectionError
 from qcore.variables.parameter import Parameter
 
 # DLL driver must be placed in the same folder as this file
-DLL = CDLL(str(Path(__file__).parent / "lms.dll"))
+DLL = CDLL(str(Path(__file__).parent / "vaunix_lms.dll"))
 
 UNIT_FREQUENCY = 10.0  # LMS encodes frequency as an integer of 10Hz steps
 UNIT_POWER = 0.25  # LMS encodes power level as an integer of 0.25dB steps

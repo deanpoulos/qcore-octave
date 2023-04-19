@@ -52,7 +52,7 @@ class DeviceStatus(Structure):
     ]
 
 
-SC = CDLL(str(Path(__file__).parent / "sc5503b.dll"))
+SC = CDLL(str(Path(__file__).parent / "signalcore_sc5503b.dll"))
 
 SC.sc5503b_OpenDevice.argtypes = [c_char_p, POINTER(c_void_p)]
 SC.sc5503b_CloseDevice.argtypes = [c_void_p]

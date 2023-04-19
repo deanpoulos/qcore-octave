@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'server_widget.ui'
+# Form implementation generated from reading ui file 'c:\Users\athar\src\qcore\qcore\gui\server_widget.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.4
 #
@@ -122,13 +122,3 @@ class Ui_server_widget(object):
         self.unstage_button.setText(_translate("server_widget", "Unstage"))
         self.staged_instruments_label.setText(_translate("server_widget", "Staged instrument(s)"))
         self.serve_button.setText(_translate("server_widget", "Serve instrument(s)"))
-
-
-if __name__ == "__main__":
-    import sys
-    app = QtWidgets.QApplication(sys.argv)
-    server_widget = QtWidgets.QWidget()
-    ui = Ui_server_widget()
-    ui.setupUi(server_widget)
-    server_widget.show()
-    sys.exit(app.exec_())
