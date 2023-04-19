@@ -8,9 +8,9 @@ import Pyro5.api as pyro
 
 from qcore.instruments.config import InstrumentConfig
 from qcore.instruments.instrument import Instrument, ConnectionError
-from qcore.gui.ui_server_widget import Ui_server_widget
+from qcore.instruments.gui.ui_server_widget import Ui_server_widget
 from qcore.helpers.logger import logger
-from qcore.resource import Resource, ResourceMetaclass
+from qcore.resource import Resource
 
 
 class ServerWorker(qtc.QObject):
