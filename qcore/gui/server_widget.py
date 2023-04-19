@@ -15,18 +15,13 @@ from qcore.helpers.logger import logger
 class SetupServerWorker(qtc.QObject):
     """ """
 
-    server_ready = qtc.pyqtSignal(bool)
+    server_ready = qtc.pyqtSignal()
 
     def run(self, config) -> None:
         """ """
-        try:
-            instrument_server = server.Server(config)
-        except ConnectionError as err:
-            logger.error(err)  # TODO error logging
-            self.server_ready.emit(False)
-        else:
-            self.server_ready.emit(True)
-            instrument_server.serve()
+        instrument_server = server.Server(config)
+        self.server_ready.emit()
+        instrument_server.serve()
 
 
 class ServerWidget(qtw.QWidget):
@@ -61,20 +56,25 @@ class ServerWidget(qtw.QWidget):
         self.server_requested.connect(self.setup_server_worker.run)
 
         self.show_instrument_type()
-        self.reset()
-
-    def reset(self) -> None:
-        """ """
         self.config, self.server, self.instruments = defaultdict(list), None, None
         self.ui.instrument_types_list.setCurrentRow(0)
         self.show_instrument_id()
         self.toggle_teardown_button()
 
-    def freeze_buttons(self) -> None:
+    """ 
+    def freeze_ui(self, state: bool) -> None:
         """ """
         buttons = ("setup_button", "stage_button", "unstage_button", "teardown_button")
         for button in buttons:
-            getattr(self.ui, button).setEnabled(False)
+            getattr(self.ui, button).setEnabled(state)
+        lists = (
+            "instrument_types_list",
+            "instrument_ids_list",
+            "staged_instruments_list",
+        )
+        for list_ in lists:
+            getattr(self.ui, list_).setEnabled(state)
+    """
 
     def show_instrument_type(self) -> None:
         """ """
@@ -83,7 +83,8 @@ class ServerWidget(qtw.QWidget):
 
     def toggle_stage_button(self) -> None:
         """ """
-        self.ui.stage_button.setEnabled(bool(self.ui.instrument_ids_list.count()))
+        is_enabled = bool(self.ui.instrument_ids_list.count()) and self.server is None
+        self.ui.stage_button.setEnabled(is_enabled)
 
     def toggle_unstage_setup_buttons(self) -> None:
         """ """
@@ -134,30 +135,28 @@ class ServerWidget(qtw.QWidget):
     def setup_server(self) -> None:
         """ """
         logger.info("Setting up Server, this may take up to 10s!!!")
-        self.freeze_buttons()
+        self.freeze_ui(True)
         self.server_requested.emit(self.config)
 
-    def handle_server_ready(self, is_ready: bool) -> None:
+    def handle_server_ready(self) -> None:
         """ """
-        if is_ready:
-            logger.info("Server is ready!!! Connecting instruments...")
-            qtc.QTimer.singleShot(500, self.link_instruments)
-        else:
-            self.toggle_stage_button()
-            self.toggle_unstage_setup_buttons()
+        qtc.QTimer.singleShot(500, self.link_instruments)
 
     def link_instruments(self) -> None:
         """ """
         self.server, self.instruments = server.link()
+        logger.info("Server connected to all available instruments!")
         self.toggle_teardown_button()
-        self.is_serving.emit(True)
+        if self.instruments:
+            self.is_serving.emit(True)
 
     def teardown_server(self) -> None:
         """ """
-        self.is_serving.emit(False)
         self.server.teardown()
-        self.ui.staged_instruments_list.clear()
-        self.reset()
+        self.is_serving.emit(False)
+        self.server, self.instruments = None, None
+        self.freeze_ui(False)
+        self.toggle_teardown_button()
         logger.info("Tore down Server!!!")
 
 

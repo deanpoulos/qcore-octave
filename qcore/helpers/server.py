@@ -6,7 +6,7 @@ import Pyro5.api as pyro
 import Pyro5.errors as pyro_errors
 
 from qcore.helpers.logger import logger
-from qcore.instruments.instrument import Instrument
+from qcore.instruments.instrument import ConnectionError, Instrument
 from qcore.resource import Resource
 
 
@@ -20,18 +20,21 @@ class Server:
 
     def __init__(self, config: dict[Type[Instrument], list[str]]) -> None:
         """ """
-        self._instruments: list[Instrument] = self._connect(config)
+        self._instruments: list[Instrument] = []
+        self._connect(config)
         self._daemon = pyro.Daemon(port=Server.PORT)
         self._services: list[pyro.URI] = []  # list of instrument URIs, set by _serve()
 
-    def _connect(self, config: dict[Type[Instrument], list[str]]) -> list[Instrument]:
+    def _connect(self, config: dict[Type[Instrument], list[str]]) -> None:
         """ """
-        instruments = []
         for cls, ids in config.items():
             for id in ids:
-                instrument = cls(id=id, name=f"{cls.__name__}#{id}")
-                instruments.append(instrument)
-        return instruments
+                try:
+                    instrument = cls(id=id, name=f"{cls.__name__}#{id}")
+                except ConnectionError as err:
+                    logger.error(err)
+                else:
+                    self._instruments.append(instrument)
 
     def serve(self) -> None:
         """blocking function"""
