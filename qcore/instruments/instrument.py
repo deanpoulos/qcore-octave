@@ -4,6 +4,8 @@ from qcore.helpers.logger import logger
 from qcore.variables.parameter import Parameter
 from qcore.resource import Resource
 
+import numpy as np
+
 
 class ConnectionError(Exception):
     """ """
@@ -81,7 +83,7 @@ class DummyInstrument(Instrument):
 
     @gettable.getter
     def gettable(self) -> int:
-        return 0
+        return np.random.randint(0, 100)
 
     @settable.getter
     def settable(self) -> int:
