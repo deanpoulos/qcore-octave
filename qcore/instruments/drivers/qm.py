@@ -12,14 +12,16 @@ from qcore.instruments.instrument import Instrument, ConnectionError
 from qcore.instruments.drivers.qm_config_builder import QMConfigBuilder, QMConfig
 from qcore.instruments.drivers.qm_result_fetcher import QMResultFetcher
 from qcore.instruments.drivers.vaunix_lms import LMS
-from qcore.elements.element import Element
+from qcore.modes.mode import Mode
 
 
 class QM(Instrument):
     """By convention, we ensure only one QM is open at a given time"""
 
+    QMM_PORT: int = 9510  # this works but 80 does not
+
     def __init__(
-        self, elements: tuple[Element] = None, oscillators: tuple[LMS] = None
+        self, modes: tuple[Mode] = None, oscillators: tuple[LMS] = None
     ) -> None:
         """ """
         self._status: bool = None
@@ -29,9 +31,9 @@ class QM(Instrument):
         self._config: QMConfig = None
         self._qcb: QMConfigBuilder = QMConfigBuilder()
 
-        self._elements: tuple[Element] = elements
+        self._modes: tuple[Mode] = modes
         self._oscillators: tuple[LMS] = oscillators
-        
+
         self._job: QmJob = None
         self._qrf: QMResultFetcher = None
 
@@ -46,17 +48,17 @@ class QM(Instrument):
         if self._qmm is not None:
             self.disconnect()
         try:
-            self._qmm = QuantumMachinesManager()
+            self._qmm = QuantumMachinesManager(port=QM.QMM_PORT)
         except Exception as err:
             raise ConnectionError(f"Failed to connect QM. Details: {err}.") from None
         else:
             self._status = True
-            if self._elements is not None and self._oscillators is not None:
-                self.open(self._elements, self._oscillators)
+            if self._modes is not None and self._oscillators is not None:
+                self.open(self._modes, self._oscillators)
 
-    def open(self, elements: tuple[Element], oscillators: tuple[LMS]) -> QuantumMachine:
+    def open(self, modes: tuple[Mode], oscillators: tuple[LMS]) -> QuantumMachine:
         """ """
-        self._config = self._qcb.build_config(elements, oscillators)
+        self._config = self._qcb.build_config(modes, oscillators)
         self._qm = self._qmm.open_qm(self._config, close_other_machines=True)
         return self._qm
 
@@ -69,6 +71,7 @@ class QM(Instrument):
         if self._qm is not None:
             self._qm.close()
         self._qmm.close()
+        self._qmm = None
         self._status = False
 
     @property
@@ -76,7 +79,7 @@ class QM(Instrument):
         """ """
         return self._status
 
-    def execute(self, qua_program: _ProgramScope) -> None:
+    def execute(self, qua_program: _ProgramScope):
         """ """
         if self._config is None or self._qm is None:
             logger.warning("Can't execute program, QM hasn't been opened with a config")
@@ -84,10 +87,11 @@ class QM(Instrument):
             # TODO error handling, if exception, set status = False, else set True
             self._job = self._qm.execute(qua_program)
             self._qrf = QMResultFetcher(self._job.result_handles)
+            return self._job
 
     def is_processing(self) -> bool:
         """ """
-        return self._qrf.is_done_fetching
+        return not self._qrf.is_done_fetching
 
     def fetch(self) -> tuple[dict[str, np.ndarray], int, int]:
         """ """

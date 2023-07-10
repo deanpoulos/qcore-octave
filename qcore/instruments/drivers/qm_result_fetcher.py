@@ -4,16 +4,15 @@ from typing import Callable
 
 import numpy as np
 
-from qm._results_01 import MultipleNamedJobResult, SingleNamedJobResult
-from qm.QmJob import JobResults
+from qm.results import MultipleStreamingResultFetcher, SingleStreamingResultFetcher
 
 
 class QMResultFetcher:
     """ """
 
-    def __init__(self, handle: JobResults) -> None:
+    def __init__(self, handle) -> None:
         """ """
-        self._handle: JobResults = handle
+        self._handle = handle
 
         self._count: int = 0  # current number of results fetched
         self._last_count: int = -1  # only used in live fetch mode to fetch batches
@@ -21,11 +20,11 @@ class QMResultFetcher:
         # set result specification for faster live fetching
         self._spec: dict[str, Callable] = {"single": {}, "multiple": {}}
         for tag, result in self._handle:
-            if isinstance(result, SingleNamedJobResult):
+            if isinstance(result, SingleStreamingResultFetcher):
                 self._spec["single"][tag] = self._fetch_single
-            elif isinstance(result, MultipleNamedJobResult):
+            elif isinstance(result, MultipleStreamingResultFetcher):
                 spec = self._spec["multiple"]
-                is_live = self._handle.is_processing()  # we are not live fetching
+                is_live = self._handle.is_processing()
                 spec[tag] = self._fetch_batch if is_live else self._fetch_multiple
 
     @property
@@ -35,8 +34,8 @@ class QMResultFetcher:
 
     @property
     def counts(self) -> tuple[int, int]:
-        """return (current count, previous count) of fetched results during live fetching"""
-        return (self._count, self._last_count)
+        """return (last count, current count) of fetched results during live fetching"""
+        return (self._last_count, self._count)
 
     def fetch(self) -> dict[str, np.ndarray]:
         """ """
