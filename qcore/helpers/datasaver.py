@@ -1,4 +1,4 @@
-""" Module to handle writing to and reading from hdf5 (.h5) files """
+""" """
 
 from __future__ import annotations
 
@@ -9,9 +9,9 @@ from typing import Union
 import h5py
 import numpy as np
 
-from qcore.variables.dataset import Dataset
+from qcore.variables.datasets import Dataset
 from qcore.helpers.logger import logger
-from qcore.variables.sweep import Sweep
+from qcore.variables.sweeps import BaseSweep
 
 
 class DataSavingError(Exception):
@@ -19,54 +19,47 @@ class DataSavingError(Exception):
 
 
 class Datasaver:
-    """
-    context manager for saving data to an .h5 file that is associated with an experimental run. only to be used as a context manager (for clean I/O).
-    Decides data handling for Experiments so user doesn't have to know the nitty-gritties of h5py
-    1. one .h5 file per experimental run
-    2. fixed group structure - only one top level group
-    - contains datasets (linked to dimension scales, if specified)
-    - and contains groups equal to the number of dicts supplied to save_metadata. each dict is meant to be the snapshot of a resource involved in the experiment run.
-    3. Datasets to be specified during DataSaver initialization, which is prior to saving the experimental data generated i.e. no dynamic dataset creation. Dimension scales will be linked to datasets automatically.
-    """
+    """ """
 
     def __init__(self, path: Path, *datasets: Dataset) -> None:
         """
         path: full path str to the datafile (must end in .h5 or .hdf5). DataSaver is not responsible for setting datafile naming/saving convention, the caller is.
         *datasets: Dataset objects to be saved.
         """
-        self._dataspec: dict[str, Dataset | Sweep] = {}  # to store datasets and sweeps
-        self._datalog: dict[str, list[int]] = {}  # to track dataset size during saving
+        self._file = None  # internal reference to the hdf5 file
+
+        self._dataspec: dict[str, Union[Dataset, BaseSweep]] = {}  # internal attr
+        self._datalog = {}  # to track Dataset size during saving
 
         self._path = path
-        self._path.parent.mkdir(exist_ok=True)
-
-        self._file = None
+        self._path.parent.mkdir(exist_ok=True)  # avoid IOError due to missing directory
 
         self._create_datasets(*datasets)
 
-        logger.debug(f"Initialized a DataSaver tagged to data file at {self._path}.")
+        logger.debug(f"Initialized a Datasaver tagged to data file at {self._path}.")
 
     def _create_datasets(self, *datasets: Dataset) -> None:
         """ """
         # mode = "x" means create file, fail if exists
         with h5py.File(self._path, mode="x", track_order=True) as file:
-
             coordinates = self._find_coordinates(*datasets)  # find sweeps of indep vars
             for name, sweep in coordinates.items():  # create coordinate datasets first
-                self._create_dataset(file, shape=sweep.shape, **sweep.metadata)
-                self._dataspec[name] = sweep
+                if sweep.save:
+                    self._create_dataset(file, shape=sweep.shape, **sweep.metadata)
+                    self._dataspec[name] = sweep
 
             for dataset in datasets:
-                self._create_dataset(file, shape=dataset.shape, **dataset.metadata)
-                self._dataspec[dataset.name] = dataset
-                self._dimensionalize_dataset(file, dataset)
+                if dataset.save:
+                    self._create_dataset(file, shape=dataset.shape, **dataset.metadata)
+                    self._dataspec[dataset.name] = dataset
+                    self._dimensionalize_dataset(file, dataset)
 
-    def _find_coordinates(self, *datasets: Dataset) -> dict[str, Sweep]:
+    def _find_coordinates(self, *datasets: Dataset) -> dict[str, BaseSweep]:
         """coordinate datasets hold the data of Sweeps"""
         coordinates = {}  # dict prevents duplication of Sweeps
         for dataset in datasets:
             for value in dataset.axes:
-                if isinstance(value, Sweep):
+                if isinstance(value, BaseSweep):
                     coordinates[value.name] = value
         logger.debug(f"Found {len(coordinates)} coordinates in the dataspec.")
         return coordinates
@@ -76,8 +69,8 @@ class Datasaver:
         file: h5py.File,
         name: str,
         shape: tuple[int],
-        chunks: bool | tuple[int] = True,
-        dtype: str = None,
+        dtype: str,
+        chunks: Union[bool, tuple[int]] = True,
         **metadata,
     ) -> None:
         """wrapper for h5py method. default fillvalue decided by h5py. metadata kwargs will be saved as dataset attrs"""
@@ -93,24 +86,24 @@ class Datasaver:
         )
 
         for key, value in metadata.items():
+            value = self._parse_attribute(key, value)
             dataset.attrs[key] = value
 
         logger.debug(f"Created dataset '{name}' with {shape = } in {self._path.name}.")
 
     def _dimensionalize_dataset(self, file: h5py.File, dataset: Dataset) -> None:
-        """internal method, for attaching dim scales to a single dataset"""
-        h5dset = file[dataset.name]  # h5py Dataset is different from labctrl Dataset
-        labels = [
-            item.name if isinstance(item, Sweep) else None for item in dataset.axes
-        ]
+        """internal method for attaching dimension scales to a single dataset"""
+        h5dset = file[dataset.name]  # h5py Dataset is different from a qcore Dataset
+        labels = [ax.name if isinstance(ax, BaseSweep) else None for ax in dataset.axes]
         for idx, label in enumerate(labels):
-            if idx is not None:
+            if label is not None:
                 h5dset.dims[idx].label = label  # make dimension label
-                coordinate = file[label]
-                coordinate.make_scale(label)
-                h5dset.dims[idx].attach_scale(coordinate)
-                message = f"Set dataset '{dataset.name}' dimension {idx} '{label}'."
-                logger.debug(message)
+                logger.debug(f"Set dataset '{dataset.name}' dim {idx} '{label = }'.")
+                if label in file.keys():
+                    coordinate = file[label]
+                    coordinate.make_scale(label)
+                    h5dset.dims[idx].attach_scale(coordinate)
+                    logger.debug(f"Attached dataset '{dataset.name}' scale '{label}'.")
 
     def __enter__(self) -> Datasaver:
         """ """
@@ -122,7 +115,6 @@ class Datasaver:
         # this will allow us to trim reziable datasets and mark uninitialized ones
         for name, dataset in self._dataspec.items():
             self._datalog[name] = [0] * len(dataset.shape)
-
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
@@ -152,29 +144,23 @@ class Datasaver:
             logger.error(message)
             raise DataSavingError(message)
 
-    def save_data(self, dataset: Union[Dataset, Sweep]) -> None:
-        """insert a batch of data to the dataset at specified index. please call this method within a datasaver context, if not it will throw error. the dataset attributes 'data' and 'index' must be already configured prior to calling this method.
-
-        with DataSaver(path_to_datafile, dataset_specification) as datasaver:
-            # key-value pairs in metadata_dict will be stored as group_name group attributes in .h5 file
-            datasaver.save_metadata(metadataspec)
-
-            datasaver.save_data(dataset)
+    def save_data(self, dataset: Union[Dataset, BaseSweep]) -> None:
+        """insert a batch of data to the dataset at specified index. please call this method within a datasaver context, if not it will throw error.
 
         dataset: Dataset the dataset as declared in the dataspec. raises an error if we encounter a dataset that has not been declared prior to saving.
 
+        the dataset attributes 'data' and 'index' must be already configured prior to calling this method.
+
         dataset.data: np.ndarray incoming data to be written into dataset
-
         dataset.index = ... means that the incoming data is written to the entire dataset in one go i.e. we do dataset[...] = incoming_data. Use this when all the data to be saved is available in memory at the same time. this is the default option.
-
-        dataset.index = tuple[int | slice] means that you want to insert the incoming data to a specific location ("hyperslab") in the dataset. Use this while saving data that is being streamed in successive batches or in any other application that requires appending to existing dataset. we pass the index directly to h5py i.e. we do dataset[index] = incoming_data, so user must be familiar with h5py indexing convention to use this feature effectively. index must be a tuple (not list etc) to ensure proper saving behaviour. to ensure more explicit code and allow reliable tracking of written data, we also enforce that the index tuple dimensions match that of the dataset shape - so an ellipsis may only be used to populate one dimension, if you want to populate multiple dimensions, use slice(None, None) instead.
+        dataset.index = tuple[slice | ... | int] means that you want to insert the incoming data to a specific location ("hyperslab") in the dataset. Use this while saving data that is being streamed in successive batches or in any other application that requires appending to existing dataset. we pass the index directly to h5py i.e. we do dataset[index] = incoming_data, so user must be familiar with h5py indexing convention to use this feature effectively. index must be a tuple (not list etc) to ensure proper saving behaviour.
         """
         self._validate_session()
 
-        name, data, index = dataset.name, dataset.data, dataset.index
+        name, data = dataset.name, dataset.data
         # h5dset is a h5py Dataset, to distinguish it from our dataset
         h5dset = self._get_dataset(name)
-        self._validate_index(name, h5dset, index)
+        index = self._validate_index(dataset, h5dset)
         h5dset[index] = data
         self._file.flush()
 
@@ -192,33 +178,33 @@ class Datasaver:
             logger.error(message)
             raise DataSavingError(message) from None
 
-    def _validate_index(
-        self, name: str, h5dset: h5py.Dataset, index: tuple[Union[int, slice]]
-    ) -> None:
+    def _validate_index(self, dataset: Dataset, h5dset: h5py.Dataset) -> None:
         """ """
-
+        index = dataset.index
         if index is ...:  # single ellipsis is a valid index
-            return
+            return index
 
         # isinstance check is necessary to ensure stable datasaving
         if not isinstance(index, tuple):
             message = (
                 f"Expect index of {tuple}, got '{index}' of '{type(index)}' "
-                f"while writing to dataset '{name}'."
+                f"while writing to dataset '{dataset.name}'."
             )
             logger.error(message)
             raise DataSavingError(message)
 
-        # dimensions of dataset and index must match to allow tracking of written data
-        if not h5dset.ndim == len(index):
-            message = (
-                f"Expect dataset '{name}' dimensions ({h5dset.ndim}) to equal the"
-                f"length of the index tuple, got {index = } with length {len(index)}."
-            )
-            logger.error(message)
-            raise DataSavingError(message)
+        # to allow tracking of written data, convert any ... to slice(None, None)
+        # such that the length of the index equals the no. of dataset dimensions
+        new_index, ndims = [], h5dset.ndim
+        for i in range(ndims):
+            if index[i] is ...:
+                new_index.extend([slice(None, None) for _ in range(ndims - i)])
+                break
+            else:
+                new_index.append(index[i])
+        return tuple(new_index)
 
-    def _track_size(self, name: str, index: tuple[int | slice]) -> None:
+    def _track_size(self, name: str, index: tuple[Union[int, slice]]) -> None:
         """ """
         if index is ...:  # we have written to the entire dataset
             self._datalog[name] = self._dataspec[name].shape
@@ -236,10 +222,10 @@ class Datasaver:
                 size[i] = self._dataspec[name].shape[i]  # maximum possible value
             else:  # item is an int
                 size[i] = max(size[i], item)
-        logger.debug(f"Tracked dataset '{name}' size {self._datalog[name]} -> {size}.")
         self._datalog[name] = size
+        logger.debug(f"Tracked dataset '{name}' size: {self._datalog[name]}.")
 
-    def save_metadata(self, metadataspec: dict[str | None, dict]) -> None:
+    def save_metadata(self, metadataspec: dict[Union[str, None], dict]) -> None:
         """metadataspec is a dict of dicts. outermost dict key = group in data file to save the metadata to. if key is a str, we create a group with that name. if key is None, we save to top level group in the file. value = metadata dict with key-value pair stored as attributes of the group named by their key. every key in the metadata dict must be a string. the following metadata dict values types/structures are recognized and saved according to the convention below (others are ignored and a warning is thrown):
         1. a single Number (int, float, complex) or string or bool is saved as is
         2. a numpy array, within hdf5 size limitations (<64kB) is saved as is
