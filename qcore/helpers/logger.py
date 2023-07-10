@@ -18,9 +18,20 @@ log_record_format = (
     "<lvl>{level} [{time:YY-MM-DD HH:mm:ss}] [{module}-{function}] {message}</>"
 )
 
+# save log files
+logger.add(
+    Path.home() / ".qcore/logs/session.log",
+    format=log_record_format,
+    rotation="24 hours",  # current log file closed and new one started every 24 hours
+    retention="1 week",  # log files created more than a week ago will be removed
+    level="DEBUG",
+    backtrace=True,
+    diagnose=True,
+)
+
 # send logged messages to users
 logger.add(
-    sys.stdout, format=log_record_format, level="DEBUG", backtrace=False, diagnose=False
+    sys.stdout, format=log_record_format, level="INFO", backtrace=False, diagnose=False
 )
 
 logger.info("Logger activated!")
