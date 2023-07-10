@@ -1,3 +1,4 @@
-from qcore.variables.dataset import Dataset
-from qcore.variables.sweep import Sweep
-from qcore.variables.variable import Variable
+""" """
+
+from qcore.variables.datasets import Dataset
+from qcore.variables.sweeps import Sweep
