@@ -1,11 +1,10 @@
 """ """
 
+import numpy as np
+
 from qcore.helpers.logger import logger
 from qcore.variables.parameter import Parameter
 from qcore.resource import Resource
-
-import numpy as np
-
 
 class ConnectionError(Exception):
     """ """
