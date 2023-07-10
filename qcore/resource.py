@@ -3,10 +3,8 @@
 import inspect
 from typing import Any
 
-from qcore.helpers.logger import logger
 import qcore.helpers.yamlizer as yml
 from qcore.variables.parameter import Parameter
-
 
 class ResourceMetaclass(type):
     """ """
