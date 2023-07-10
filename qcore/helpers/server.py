@@ -1,13 +1,15 @@
 """ Instrument server """
 
-from typing import Type
+from pathlib import Path
 
 import Pyro5.api as pyro
 import Pyro5.errors as pyro_errors
 
 from qcore.helpers.logger import logger
-from qcore.instruments.instrument import ConnectionError, Instrument
+import qcore.helpers.yamlizer as yml
+from qcore.instruments.instrument import Instrument
 from qcore.resource import Resource
+from qcore.variables.parameter import Parameter
 
 
 @pyro.expose
@@ -18,23 +20,11 @@ class Server:
     PORT = 9090  # port to bind a remote server on, used to initialize Pyro Daemon
     URI = f"PYRO:{NAME}@localhost:{PORT}"  # unique resource identifier (URI)
 
-    def __init__(self, config: dict[Type[Instrument], list[str]]) -> None:
+    def __init__(self, configpath: Path) -> None:
         """ """
-        self._instruments: list[Instrument] = []
-        self._connect(config)
+        self._instruments: list[Instrument] = yml.load(configpath)
         self._daemon = pyro.Daemon(port=Server.PORT)
         self._services: list[pyro.URI] = []  # list of instrument URIs, set by _serve()
-
-    def _connect(self, config: dict[Type[Instrument], list[str]]) -> None:
-        """ """
-        for cls, ids in config.items():
-            for id in ids:
-                try:
-                    instrument = cls(id=id, name=f"{cls.__name__}#{id}")
-                except ConnectionError as err:
-                    logger.error(err)
-                else:
-                    self._instruments.append(instrument)
 
     def serve(self) -> None:
         """blocking function"""
@@ -42,16 +32,19 @@ class Server:
         for instrument in self._instruments:
             uri = self._daemon.register(instrument, objectId=instrument.name)
             self._services.append(uri)
+            logger.info(f"Registered {instrument = } with daemon at {uri = }.")
         self._daemon.register(self, objectId=Server.NAME)
         with self._daemon:
+            logger.info("Remote stage setup complete! Now listening for requests...")
             self._daemon.requestLoop()
 
     def _expose(self) -> None:
         """ """
-        instrument_classes = {instrument.__class__ for instrument in self._instruments}
-        instrument_classes |= {Resource, Instrument}
-        for instrument_class in instrument_classes:
-            pyro.expose(instrument_class)
+        classes = {instrument.__class__ for instrument in self._instruments}
+        classes |= {Instrument, Resource, Parameter}
+        for cls in classes:
+            pyro.expose(cls)
+            logger.info(f"Exposed class {cls} to Pyro5.")
 
     @property
     def services(self) -> list[pyro.URI]:
@@ -76,9 +69,9 @@ def link() -> tuple[pyro.Proxy, list[pyro.Proxy]]:
     server = pyro.Proxy(Server.URI)
     try:
         services = server.services
-    except pyro_errors.CommunicationError:  # no remote server found
-        logger.warning(f"Remote server requested but not found at {Server.URI}")
-        return (None, [])
+    except pyro_errors.CommunicationError as err:  # no remote server found
+        logger.error(f"Remote server requested but not found at {Server.URI}")
+        raise err from None
     else:
         instruments = [pyro.Proxy(uri) for uri in services]
         return (server, instruments)
