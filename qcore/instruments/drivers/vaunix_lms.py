@@ -73,6 +73,7 @@ class LMS(Instrument):
 
         DLL.fnLMS_SetTestMode(False)  # we are using actual hardware
         DLL.fnLMS_SetUseInternalRef(self._handle, False)  # use external 10MHz reference
+        print(f"{self} is ready to use!")
 
     def _errorcheck(self, errorcode: int) -> None:
         """Only if we get bad values during setting params"""
@@ -106,6 +107,7 @@ class LMS(Instrument):
             error = DLL.fnLMS_InitDevice(handle)
             if not error:  # 0 indicates successful device initialization
                 self._handle = handle
+                print(f"Connected to {self}!")
                 return
             raise ConnectionError(f"Failed to connect {self}.")
         raise ConnectionError(f"{self} is not available for connection.")
@@ -114,41 +116,49 @@ class LMS(Instrument):
         """ """
         self._errorcheck(DLL.fnLMS_CloseDevice(self._handle))
         self._handle = None
+        print(f"Disconnected {self}!")
 
     @clocked.getter
     def clocked(self) -> bool:
         """The hex code for PLL_LOCKED flag is 0x00000040 in vnx_LMS_api.h"""
-        return bool(int(hex(DLL.fnLMS_GetDeviceStatus(self._handle))[-2]))
+        value = bool(int(hex(DLL.fnLMS_GetDeviceStatus(self._handle))[-2]))
+        return value
 
     @output.getter
     def output(self) -> bool:
         """ """
-        return bool(DLL.fnLMS_GetRF_On(self._handle))
+        value = bool(DLL.fnLMS_GetRF_On(self._handle))
+        return value
 
     @output.setter
     def output(self, value: bool) -> None:
         """ """
         self._errorcheck(DLL.fnLMS_SetRFOn(self._handle, value))
+        print(f"Set {self} output {value = }.")
 
     @frequency.getter
     def frequency(self) -> float:
         """ """
-        return to_frequency(DLL.fnLMS_GetFrequency(self._handle))
+        value = to_frequency(DLL.fnLMS_GetFrequency(self._handle))
+        return value
 
     @frequency.setter
     def frequency(self, value: float) -> None:
         """ """
         self._errorcheck(DLL.fnLMS_SetFrequency(self._handle, from_frequency(value)))
+        print(f"Set {self} frequency {value = }.")
 
     @power.getter
     def power(self) -> float:
         """ """
-        return to_power(DLL.fnLMS_GetAbsPowerLevel(self._handle))
+        value = to_power(DLL.fnLMS_GetAbsPowerLevel(self._handle))
+        return value
 
     @power.setter
     def power(self, value: float) -> None:
         """ """
         self._errorcheck(DLL.fnLMS_SetPowerLevel(self._handle, from_power(value)))
+        print(f"Set {self} power {value = }.")
 
     @property
     def min_frequency(self) -> float:
