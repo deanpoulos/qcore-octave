@@ -53,12 +53,15 @@ class Server:
 
     def teardown(self) -> None:
         """ """
+        logger.info("Tearing down the remote server...")
         self._disconnect()
         with self._daemon:
             self._daemon.shutdown()
+        logger.info("Remote server teardown complete!")
 
     def _disconnect(self) -> None:
         """ """
+        logger.info("Disonnecting instruments...")
         for instrument in self._instruments:
             if instrument.status:
                 instrument.disconnect()
