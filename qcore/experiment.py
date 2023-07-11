@@ -43,9 +43,9 @@ class ExperimentManager:
         with Stage(remote=True) as stage:
             instruments = {rsc.name: rsc for rsc in stage.get(*stage.resources)}
 
-        modes_config = folder / "modes.yml"
+        modes_config = folder / "config/modes.yml"
         if not modes_config.exists():
-            message = f"A Mode config file named 'modes.yml' must exist in {folder = }."
+            message = f"A file named 'modes.yml' must exist at path '{modes_config}'."
             raise ExperimentInitializationError(message)
 
         with Stage(modes_config) as stage:
