@@ -1,5 +1,5 @@
 """ """
-from typing import Any
+from typing import Any, Union
 
 from qm import qua
 
@@ -36,10 +36,6 @@ class Mode(Resource):
         self._rf_switch_on: bool = False
         self._operations: dict[str, Pulse] = {}
         self._pulse_op_map: dict[str, str] = {}
-
-        ops = parameters.get("operations")
-        if isinstance(ops, dict):
-            parameters["operations"] = list(ops.values())
 
         super().__init__(name=name, ports=ports, **parameters)
 
@@ -136,27 +132,26 @@ class Mode(Resource):
         return self._operations.copy()
 
     @operations.setter
-    def operations(self, value: list[Pulse]) -> None:
+    def operations(self, value: Union[list[Pulse], dict[str, Pulse]]) -> None:
         """ """
-        pulse_names = []
-        try:
-            for pulse in value:
-                name = pulse.name
-                if not isinstance(pulse, Pulse):
-                    raise ValueError(f"Invalid value '{pulse}', must be of {Pulse}")
-                if name in pulse_names:
-                    message = f"Pulse names must be unique, found duplicate {name = }."
-                    logger.error(message)
-                    raise ValueError(message)
-                else:
-                    pulse_names.append(name)
-        except TypeError:
-            raise ValueError(f"Setter expects {list[Pulse]}.") from None
+        if isinstance(value, list):
+            pulse_names = [p.name for p in value]
+            pulses = value
+        elif isinstance(value, dict):
+            pulse_names = list(value.keys())
+            pulses = list(value.values())
+        else:
+            raise ValueError(f"Setter expects {list[Pulse]} or {dict[str, Pulse]}.")
 
-        if value:
-            self._operations = {p.name: p for p in value}
-            self._pulse_op_map = {p.name: k for k, p in self._operations.items()}
-            logger.debug(f"Set {self} operations '{pulse_names}'.")
+        ops = {}
+        for pulse_name, pulse in zip(pulse_names, pulses):
+            if not isinstance(pulse, Pulse):
+                raise ValueError(f"Invalid value '{pulse}', must be of {Pulse}")
+            ops[pulse_name] = pulse
+
+        self._operations = ops
+        self._pulse_op_map = {p.name: k for k, p in self._operations.items()}
+        logger.debug(f"Set {self} operations '{pulse_names}'.")
 
     def add_operations(self, *operations: Pulse) -> None:
         """ """
