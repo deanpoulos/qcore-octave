@@ -170,10 +170,6 @@ class Plotter:
         self, interval: float, expt_name: str, datafile, *datasets: Dataset
     ) -> None:
         """ """
-        if not datasets:
-            logger.warning("No datasets to plot, the plotter will not run.")
-            return
-
         self.interval = interval
         self.datasets = datasets
         self.header, self._header_text = None, expt_name
