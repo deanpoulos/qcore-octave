@@ -262,7 +262,7 @@ class Plotter:
 
     def plot(self, message, stop=False, exit=False) -> None:
         """ """
-        if self.layout.window_closed.is_set():
+        if self.layout is not None and self.layout.window_closed.is_set():
             self.stop_expt = True
 
         self._header_text = f"{self._expt_name}{message}"
