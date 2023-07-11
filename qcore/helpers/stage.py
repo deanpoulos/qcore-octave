@@ -47,7 +47,8 @@ class Stage:
             self._configpath.parent.mkdir(exist_ok=True)
             self._configpath.touch(exist_ok=True)
             resources = yml.load(self._configpath)
-            self.add(*resources)
+            if resources:
+                self.add(*resources)
 
         self._server, self._proxies = None, []  # will be updated by _link()
         if remote:

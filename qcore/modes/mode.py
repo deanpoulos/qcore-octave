@@ -34,8 +34,12 @@ class Mode(Resource):
         self._mixer_offsets: dict[str, float] = dict.fromkeys(self.OFFSETS_KEYS, 0.0)
         self._rf_switch: RFSwitch = None
         self._rf_switch_on: bool = False
-        self._operations: dict[str, Pulse] = []
+        self._operations: dict[str, Pulse] = {}
         self._pulse_op_map: dict[str, str] = {}
+
+        ops = parameters.get("operations")
+        if isinstance(ops, dict):
+            parameters["operations"] = list(ops.values())
 
         super().__init__(name=name, ports=ports, **parameters)
 
@@ -44,8 +48,7 @@ class Mode(Resource):
         snapshot = super().snapshot()
         if flatten:
             flat_ops = {
-                k: p.snapshot(flatten=True)
-                for k, p in snapshot["operations"].items()
+                k: p.snapshot(flatten=True) for k, p in snapshot["operations"].items()
             }
             snapshot["operations"] = flat_ops
             rf_switch = snapshot["rf_switch"]
@@ -133,11 +136,12 @@ class Mode(Resource):
         return self._operations.copy()
 
     @operations.setter
-    def operations(self, value: dict[str, Pulse]) -> None:
+    def operations(self, value: list[Pulse]) -> None:
         """ """
         pulse_names = []
         try:
-            for name, pulse in value.items():
+            for pulse in value:
+                name = pulse.name
                 if not isinstance(pulse, Pulse):
                     raise ValueError(f"Invalid value '{pulse}', must be of {Pulse}")
                 if name in pulse_names:
@@ -150,13 +154,13 @@ class Mode(Resource):
             raise ValueError(f"Setter expects {list[Pulse]}.") from None
 
         if value:
-            self._operations = value
+            self._operations = {p.name: p for p in value}
             self._pulse_op_map = {p.name: k for k, p in self._operations.items()}
             logger.debug(f"Set {self} operations '{pulse_names}'.")
 
-    def add_operations(self, **operations) -> None:
+    def add_operations(self, *operations: Pulse) -> None:
         """ """
-        self.operations = {**self._operations, **operations}
+        self.operations = [*self._operations.values(), *operations]
 
     def remove_operations(self, *names: str) -> None:
         """ """
