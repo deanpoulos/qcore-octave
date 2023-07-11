@@ -82,7 +82,8 @@ class Stage:
         if self._configpath is not None:
             logger.debug(f"Saving staged resources to {self._configpath}...")
             resources = [r for r in self._resources.values() if isinstance(r, Resource)]
-            yml.dump(self._configpath, *resources)
+            if resources:
+                yml.dump(self._configpath, *resources)
 
     @property
     def resources(self) -> set[str]:

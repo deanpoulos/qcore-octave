@@ -35,7 +35,7 @@ class Server:
             logger.info(f"Registered {instrument = } with daemon at {uri = }.")
         self._daemon.register(self, objectId=Server.NAME)
         with self._daemon:
-            logger.info("Remote stage setup complete! Now listening for requests...")
+            logger.info("Remote server setup complete! Now listening for requests...")
             self._daemon.requestLoop()
 
     def _expose(self) -> None:
