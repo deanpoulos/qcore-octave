@@ -56,17 +56,19 @@ class Dataset(QuaVariable):
         self.dtype = kwargs.get("dtype", float)
         self.units = kwargs.get("units", "A.U.")
 
-        self.datafn = kwargs.get("datafn")
-        if self.datafn is not None:
-            self.select_datafn()
+        self._datafn = None
+        datafn = kwargs.get("datafn")
+        if datafn is not None:
+            self.datafn = datafn
         self.inputs = kwargs.get("inputs", ())
         self.datafn_args = kwargs.get("datafn_args", {})
         self.data = kwargs.get("data")
         self.avg, self.sem, self._var, self._count = None, None, None, 0
 
-        self.fitfn = kwargs.get("fitfn")
-        if self.fitfn is not None:
-            self.select_fitfn()
+        self._fitfn = None
+        fitfn = kwargs.get("fitfn")
+        if fitfn is not None:
+            self.fitfn = fitfn
 
         self.plot_args = kwargs.get("plot_args", {})
 
@@ -79,21 +81,39 @@ class Dataset(QuaVariable):
 
     def select_datafn(self) -> None:
         """ """
-        try:
-            self.datafn = DATAFN_MAP[self.datafn]
-        except KeyError:
-            valid_datafns = list(DATAFN_MAP.keys())
-            message = f"Datafn '{self.datafn}' does not exist. {valid_datafns = }."
-            logger.error(message)
-            raise DatasetInitializationError(message)
 
     def select_fitfn(self) -> None:
         """ """
+
+    @property
+    def datafn(self):
+        """ """
+        return self._datafn
+
+    @datafn.setter
+    def datafn(self, value: str):
+        """ """
         try:
-            self.fitfn = FITFN_MAP[self.fitfn]
+            self._datafn = DATAFN_MAP[value]
+        except KeyError:
+            valid_datafns = list(DATAFN_MAP.keys())
+            message = f"Datafn '{value}' does not exist. {valid_datafns = }."
+            logger.error(message)
+            raise DatasetInitializationError(message)
+
+    @property
+    def fitfn(self):
+        """ """
+        return self._fitfn
+
+    @fitfn.setter
+    def fitfn(self, value: str):
+        """ """
+        try:
+            self._fitfn = FITFN_MAP[value]
         except KeyError:
             valid_fitfns = list(FITFN_MAP.keys())
-            message = f"Fit function '{self.fitfn}' does not exist. {valid_fitfns = }."
+            message = f"Fit function '{value}' does not exist. {valid_fitfns = }."
             logger.error(message)
             raise DatasetInitializationError(message)
 
