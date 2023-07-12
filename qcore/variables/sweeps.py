@@ -28,38 +28,49 @@ class Sweep:
         stop: Union[float, int] = None,  # end point for arange- or linspace-like sweeps
         step: Union[float, int] = 1,  # point spacing for arange-like sweeps
         num: int = None,  # number of sweep points for np.linspace-like sweeps
-        include_endpoint: bool = True,  # whether or not to include end point in sweep
+        endpoint: bool = True,  # whether or not to include end point in sweep
         kind: str = "lin",  # choose linear ("lin") or logarithmic ("log") sweep spacing
     ) -> None:
         """ """
         self.name = name
-        self.sweep: BaseSweep = None  # BaseSweep obtained from this Sweep specification
+        self._sweep: BaseSweep = None  # BaseSweep based on this Sweep specification
+        self.start, self.stop, self.step, self.num = start, stop, step, num
+        self.endpoint = endpoint
+        self.points = points
+        self.kind = kind
+        self.target = target
+        self.dtype = dtype
+        self.units = units
+        self.save = save
 
+    @property
+    def sweep(self) -> BaseSweep:
+        """ """
         # resolution order for obtaining BaseSweep: PointsSweep > EvenSweep > RangeSweep
 
-        points_kwargs = {"start": start, "stop": stop, "endpoint": include_endpoint}
+        pts_kws = {"start": self.start, "stop": self.stop, "endpoint": self.endpoint}
 
         # PointsSweep has discrete points - all int, float, str
-        if isinstance(points, (list, tuple, set)):
-            if all(isinstance(x, (int, float, str)) for x in points):
-                dtype = np.dtype(type(points[0]))
-                sweep_pts = DiscretePoints(points=points)
-        elif isinstance(num, int):  # EvenlySpacedSweepPoints: LinSweep or LogSweep
-            if kind == "lin":
-                sweep_pts = LinSpacedPoints(num=num, dtype=dtype, **points_kwargs)
-            elif kind == "log":
-                sweep_pts = LogSpacedPoints(num=num, dtype=dtype, **points_kwargs)
-        elif isinstance(stop, (int, float)):
-            sweep_pts = RangePoints(step=step, dtype=dtype, **points_kwargs)
+        if isinstance(self.points, (list, tuple, set)):
+            if all(isinstance(x, (int, float, str)) for x in self.points):
+                self.dtype = np.dtype(type(self.points[0]))
+                sweep_pts = DiscretePoints(points=self.points)
+        elif isinstance(self.num, int):  # EvenlySpacedSweepPoints: LinSweep or LogSweep
+            if self.kind == "lin":
+                sweep_pts = LinSpacedPoints(num=self.num, dtype=self.dtype, **pts_kws)
+            elif self.kind == "log":
+                sweep_pts = LogSpacedPoints(num=self.num, dtype=self.dtype, **pts_kws)
+        elif isinstance(self.stop, (int, float)):
+            sweep_pts = RangePoints(step=self.step, dtype=self.dtype, **pts_kws)
         else:
-            raise ValueError(f"Badly specified sweep '{name = }'. READ THE RULEZ !!!")
+            raise ValueError(f"Badly specified sweep '{self.name}'.")
 
-        if target is None:
-            self.sweep = QuaSweep(name, dtype, sweep_pts, units=units, save=save)
+        if self.target is None:
+            self._sweep = QuaSweep(self.name, self.dtype, sweep_pts, units=self.units, save=self.save)
         else:
-            kwargs = {"name": name, "dtype": dtype, "sweep_points": sweep_pts}
-            self.sweep = QcoreSweep(target, units=units, save=save, **kwargs)
+            self._sweep = QcoreSweep(self.target, units=self.units, save=self.save, name=self.name, dtype=self.dtype, sweep_points=sweep_pts)
 
+        return self._sweep
 
 class SweepPoints:
     """ """
@@ -223,7 +234,7 @@ class RangePoints(SweepPoints):
             "start": self.start,
             "stop": self.stop,
             "step": self.step,
-            "include_endpoint": self.endpoint,
+            "endpoint": self.endpoint,
         }
 
 
@@ -262,7 +273,7 @@ class EvenlySpacedPoints(SweepPoints):
             "start": self.start,
             "stop": self.stop,
             "num": self.num,
-            "include_endpoint": self.endpoint,
+            "endpoint": self.endpoint,
             "kind": kind,
         }
 
