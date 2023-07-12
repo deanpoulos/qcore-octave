@@ -20,11 +20,11 @@ def phase(data, freq, delay=0):
     return np.angle(np.exp(1j * 2 * np.pi * delay * freq) * (x + 1j * y))
 
 
-def fft(data, length=1):
+def fft(data, length):
     """ """
-    (x, ) = data
-    x = x - np.average(x, axis=1)[:, None]
-    return (np.abs(np.fft.fft(x)) / length)[: int(length / 2 + 1)]
+    (x,) = data
+    x = x - np.average(x)
+    return (np.abs(np.fft.fft(x)) / length)[:, : int(length / 2 + 1)]
 
 
 DATAFN_MAP = {
