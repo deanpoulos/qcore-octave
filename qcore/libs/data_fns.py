@@ -22,9 +22,9 @@ def phase(data, freq, delay=0):
 
 def fft(data, length=1):
     """ """
-    data = data - np.average(data, axis=1)[:, None]
-    fft_data = np.abs(np.fft.fft(data)) / length
-    return fft_data[: int(length / 2 + 1)]
+    (x, ) = data
+    x = x - np.average(x, axis=1)[:, None]
+    return (np.abs(np.fft.fft(x)) / length)[: int(length / 2 + 1)]
 
 
 DATAFN_MAP = {
