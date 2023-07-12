@@ -210,7 +210,8 @@ class ExperimentManager:
         # prepare Dataset axes
         for dset in datasets.values():
             if dset.name in primary_datasets:
-                dset.stream = True  # by convention, only raw datasets are streamed
+                if dset.stream is False:  # do not change stream value for ADC datasets
+                    dset.stream = True  # by convention, only raw datasets are streamed
             else:
                 if not dset.inputs:
                     dset.inputs = primary_datasets
