@@ -1,4 +1,4 @@
-__version__ = "1.1.2"
+__version__ = "1.2.0"
 
 from qcore.helpers.logger import logger
 from qcore.resource import Resource
