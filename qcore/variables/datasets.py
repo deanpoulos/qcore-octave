@@ -29,6 +29,7 @@ class Dataset(QuaVariable):
     - plot_args
         - plot_type: ("scatter", "line", "image), default = "scatter"
         - plot_err: whether or not to show errorbars, default = True
+        - plot_avg: whether or not to plot "dataset.avg", default is to plot "dataset.data"
         - xlabel: str
         - ylabel: str
         - title: str
@@ -148,24 +149,21 @@ class Dataset(QuaVariable):
             shape.pop(0)
             self.buffer = shape
 
-    def update(self, data, prev_count, incoming_count) -> None:
-        """ """
+    def update(self, datasets, prev_count, incoming_count) -> None:
+        """ FOR DERIVED DATASETS ONLY """
         # update only if new data found
         if prev_count == incoming_count:
             return
         
-        # update data values
-        if self.datafn is None:
-            self.data = data
-        else:
-            self.data = self.datafn(data, **self.datafn_args)
+        self.data = self.datafn(datasets, **self.datafn_args)
+        self.index = ...
 
         # update index of next batch of data to be inserted in the datafile
-        self.index = (slice(prev_count, incoming_count), ...)
+        #self.index = (slice(prev_count, incoming_count), ...)
 
         # update avg and sem
-        k = prev_count + incoming_count
-        avg = self.avg + np.sum(self.data - self.avg, axis=0) / k
-        estimator = (self.data - self.avg) * (self.data - avg)
-        var = (self._var + np.sum(estimator, axis=0)) / (k - 1)
-        self.avg, self._var, self.sem = avg, var, np.sqrt(var / (k * (k - 1)))
+        #k = prev_count + incoming_count
+        #avg = self.avg + np.sum(self.data - self.avg, axis=0) / k
+        #estimator = (self.data - self.avg) * (self.data - avg)
+        #var = (self._var + np.sum(estimator, axis=0)) / (k - 1)
+        #self.avg, self._var, self.sem = avg, var, np.sqrt(var / (k))

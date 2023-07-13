@@ -8,16 +8,17 @@ import numpy as np
 def mag(data):
     """absolute value of two inputs x and y"""
     x, y = data
-    return np.sqrt(x**2 + y**2)
+    return np.sqrt(x.avg**2 + y.avg**2)
 
 
-def phase(data, freq, delay=0):
+def phase(data, freq=None, delay=0):
     """ """
-    if freq is None:  # freq-dependent phase, freq got from incoming data at index = 0
+    if freq is None:  # freq-dependent phase, freq is a Sweep
         x, y, freq = data
+        freq = freq.data
     else:  # constant frequency calculation, freq to be passed in by the user
         x, y = data
-    return np.angle(np.exp(1j * 2 * np.pi * delay * freq) * (x + 1j * y))
+    return np.angle(np.exp(-1j * 2 * np.pi * delay * freq) * (x.avg + 1j * y.avg))
 
 
 def fft(data, length):

@@ -84,6 +84,7 @@ class QuaVariable:
             self.qua_stream.buffer(*self.buffer).save(self.tag)
         elif not adc_trace:  # is dataset
             self.qua_stream.buffer(*self.buffer).save_all(self.tag)
+            self.qua_stream.buffer(*self.buffer).average().save(f"{self.tag}_avg")
         else:
             message = f"Failed to process stream for qua variable '{self.tag}'."
             logger.error(message)

@@ -217,7 +217,7 @@ class ExperimentManager:
                     dset.inputs = primary_datasets
                 else:
                     for input_dset in dset.inputs:
-                        if input_dset not in datasets:
+                        if input_dset not in datasets and input_dset not in sweep_dict:
                             message = (
                                 f"Derived dataset '{dset.name}' has an "
                                 f"unrecognized input dataset named '{input_dset}'."
@@ -430,14 +430,25 @@ class Experiment:
                             sweep.update(data[name])
                             datasaver.save_data(sweep)
 
-                    # update primary and derived datasets
+                    # update primary datasets first
+                    for name, dset in self._datasets.items():
+                        if name in self.primary_datasets:
+                            dset.data = data[name]
+                            dset.index = (slice(prev_count, incoming_count), ...)
+                        if not dset.is_adc_trace:
+                            dset.avg = data[f"{name}_avg"]  # update running average
+
+                    # update derived datasets
                     for name, dset in self._datasets.items():
                         if dset.inputs:  # is derived dataset with datafn and inputs
-                            values = [data[i] for i in dset.inputs]
-                        elif dset.stream:  # is primary dataset streamed by the OPX
-                            values = data[name]
-                        dset.update(values, prev_count, incoming_count)
-                        data[name] = dset.data
+                            dsets = []
+                            for i in dset.inputs:
+                                if i in self._datasets:
+                                    dsets.append(self._datasets[i])
+                                elif i in self._sweeps:
+                                    dsets.append(self._sweeps[i])
+                            dset.update(dsets, prev_count, incoming_count)
+                            data[name] = dset.data
 
                     # process additional user-defined datasets in subclasses
                     self.process_data(
