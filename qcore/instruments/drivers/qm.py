@@ -79,14 +79,14 @@ class QM(Instrument):
         """ """
         return self._status
 
-    def execute(self, qua_program: _ProgramScope):
+    def execute(self, qua_program: _ProgramScope, total_count=None):
         """ """
         if self._config is None or self._qm is None:
             logger.warning("Can't execute program, QM hasn't been opened with a config")
         else:
             # TODO error handling, if exception, set status = False, else set True
             self._job = self._qm.execute(qua_program)
-            self._qrf = QMResultFetcher(self._job.result_handles)
+            self._qrf = QMResultFetcher(self._job.result_handles, total_count)
             return self._job
 
     def is_processing(self) -> bool:

@@ -403,7 +403,7 @@ class Experiment:
         """ """
         self._qm: QM = self._get_qm()
         qua_program = self._build_qua_program()
-        self._qm.execute(qua_program)
+        self._qm.execute(qua_program, self.repetitions)
 
         time.sleep(self.fetch_interval)
 
@@ -423,6 +423,7 @@ class Experiment:
 
                 # fetch latest batch of partial data along with data counts
                 data, prev_count, incoming_count = self._qm.fetch()
+                plot_msg = f": {incoming_count} / {self.repetitions} data batches"
                 if data:  # to prevent update when empty data dict is fetched
                     # update sweep data and save to datafile
                     for name, sweep in sweeps_to_save.items():
@@ -463,7 +464,6 @@ class Experiment:
                     for name, dataset in dsets_to_save.items():
                         datasaver.save_data(dataset)
 
-                plot_msg = f": {incoming_count} / {self.repetitions} data batches"
                 plotter.plot(message=plot_msg)  # update live plot
 
                 time.sleep(self.fetch_interval)
