@@ -79,12 +79,6 @@ class Dataset(QuaVariable):
         """ """
         return f"{self.__class__.__name__} '{self.name}'"
 
-    def select_datafn(self) -> None:
-        """ """
-
-    def select_fitfn(self) -> None:
-        """ """
-
     @property
     def datafn(self):
         """ """
@@ -156,6 +150,10 @@ class Dataset(QuaVariable):
 
     def update(self, data, prev_count, incoming_count) -> None:
         """ """
+        # update only if new data found
+        if prev_count == incoming_count:
+            return
+        
         # update data values
         if self.datafn is None:
             self.data = data
