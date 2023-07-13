@@ -435,8 +435,8 @@ class Experiment:
                         if name in self.primary_datasets:
                             dset.data = data[name]
                             dset.index = (slice(prev_count, incoming_count), ...)
-                        if not dset.is_adc_trace:
-                            dset.avg = data[f"{name}_avg"]  # update running average
+                            if not dset.is_adc_trace:
+                                dset.avg = data[f"{name}_avg"]  # update running average
 
                     # update derived datasets
                     for name, dset in self._datasets.items():
