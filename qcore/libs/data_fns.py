@@ -18,15 +18,15 @@ def phase(data, freq=None, delay=0):
         freq = freq.data
     else:  # constant frequency calculation, freq to be passed in by the user
         x, y = data
-    return np.angle(np.exp(-1j * 2 * np.pi * delay * freq) * (x.avg + 1j * y.avg))
-
+    phase = np.angle(np.exp(-1j * 2 * np.pi * delay * freq) * (x.avg + 1j * y.avg))
+    return np.unwrap(phase)
 
 def fft(data, length):
     """ """
     (x,) = data
     x = x.avg
     x = x - np.average(x)
-    return (np.abs(np.fft.fft(x)) / length)[:, : int(length / 2 + 1)]
+    return (np.abs(np.fft.fft(x)) / length)[: int(length / 2 + 1)]
 
 
 DATAFN_MAP = {
