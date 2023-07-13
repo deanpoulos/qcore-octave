@@ -422,34 +422,36 @@ class Experiment:
                     break
 
                 # fetch latest batch of partial data along with data counts
-                data, prev_count, incoming_count = self._qm.fetch()                    # update sweep data and save to datafile
-                for name, sweep in sweeps_to_save.items():
-                    if isinstance(sweep, QuaSweep):
-                        sweep.update(data[name])
-                        datasaver.save_data(sweep)
+                data, prev_count, incoming_count = self._qm.fetch()
+                if data:  # to prevent update when empty data dict is fetched
+                    # update sweep data and save to datafile
+                    for name, sweep in sweeps_to_save.items():
+                        if isinstance(sweep, QuaSweep):
+                            sweep.update(data[name])
+                            datasaver.save_data(sweep)
 
-                # update primary and derived datasets
-                for name, dset in self._datasets.items():
-                    if dset.inputs:  # is derived dataset with datafn and inputs
-                        values = [data[i] for i in dset.inputs]
-                    elif dset.stream:  # is primary dataset streamed by the OPX
-                        values = data[name]
-                    dset.update(values, prev_count, incoming_count)
-                    data[name] = dset.data
+                    # update primary and derived datasets
+                    for name, dset in self._datasets.items():
+                        if dset.inputs:  # is derived dataset with datafn and inputs
+                            values = [data[i] for i in dset.inputs]
+                        elif dset.stream:  # is primary dataset streamed by the OPX
+                            values = data[name]
+                        dset.update(values, prev_count, incoming_count)
+                        data[name] = dset.data
 
-                # process additional user-defined datasets in subclasses
-                self.process_data(
-                    data,
-                    prev_count,
-                    incoming_count,
-                    self._qua_sweeps,
-                    self._datasets,
-                    qcore_sweep_point,
-                )
+                    # process additional user-defined datasets in subclasses
+                    self.process_data(
+                        data,
+                        prev_count,
+                        incoming_count,
+                        self._qua_sweeps,
+                        self._datasets,
+                        qcore_sweep_point,
+                    )
 
-                # save datasets and sweeps (after updating) to datafile
-                for name, dataset in dsets_to_save.items():
-                    datasaver.save_data(dataset)
+                    # save datasets and sweeps (after updating) to datafile
+                    for name, dataset in dsets_to_save.items():
+                        datasaver.save_data(dataset)
 
                 plot_msg = f": {incoming_count} / {self.repetitions} data batches"
                 plotter.plot(message=plot_msg)  # update live plot
