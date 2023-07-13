@@ -10,9 +10,10 @@ from qm.results import MultipleStreamingResultFetcher, SingleStreamingResultFetc
 class QMResultFetcher:
     """ """
 
-    def __init__(self, handle) -> None:
+    def __init__(self, handle, total_count=None) -> None:
         """ """
         self._handle = handle
+        self._total_count = total_count
 
         self._count: int = 0  # current number of results fetched
         self._last_count: int = -1  # only used in live fetch mode to fetch batches
@@ -30,7 +31,10 @@ class QMResultFetcher:
     @property
     def is_done_fetching(self) -> bool:
         """flag to indicate job fetch status, True if all results have been fetched"""
-        return self._count == self._last_count and not self._handle.is_processing()
+        if self._total_count is None:
+            return self._count == self._last_count and not self._handle.is_processing()
+        else:
+            return self._count == self._total_count and not self._handle.is_processing()
 
     @property
     def counts(self) -> tuple[int, int]:
@@ -40,7 +44,7 @@ class QMResultFetcher:
     def fetch(self) -> dict[str, np.ndarray]:
         """ """
         self._last_count, self._count = self._count, self._count_results()
-        if self._count == self._last_count or self.is_done_fetching:
+        if self._count == self._last_count:
             return {}
         return {tag: f(tag) for spec in self._spec.values() for tag, f in spec.items()}
 
