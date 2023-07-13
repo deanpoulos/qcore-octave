@@ -41,7 +41,9 @@ class PlotSpec:
 
         # determine the number of data items per plot
         shape = dataset.shape
-        data_dim = len(shape) - 1  # discard 1 averaging dimension "N"
+        data_dim = len(shape)
+        if not dataset.inputs:  # is a primary dataset TODO set a better criterion
+            data_dim = len(shape) - 1  # discard 1 averaging dimension "N"
         self.num_data_items = 1  # default number of data items in one plot item
         if data_dim == 2 and not self.plot_type == "image":
             self.num_data_items = shape[-2]
