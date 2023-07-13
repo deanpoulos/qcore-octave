@@ -24,6 +24,7 @@ def phase(data, freq=None, delay=0):
 def fft(data, length):
     """ """
     (x,) = data
+    x = x.avg
     x = x - np.average(x)
     return (np.abs(np.fft.fft(x)) / length)[:, : int(length / 2 + 1)]
 
