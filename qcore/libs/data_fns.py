@@ -11,7 +11,7 @@ def mag(data):
     return np.sqrt(x.avg**2 + y.avg**2)
 
 
-def phase(data, freq=None, delay=0):
+def phase(data, freq=None, delay=0, unwrap=True):
     """ """
     if freq is None:  # freq-dependent phase, freq is a Sweep
         x, y, freq = data
@@ -19,7 +19,7 @@ def phase(data, freq=None, delay=0):
     else:  # constant frequency calculation, freq to be passed in by the user
         x, y = data
     phase = np.angle(np.exp(-1j * 2 * np.pi * delay * freq) * (x.avg + 1j * y.avg))
-    return np.unwrap(phase)
+    return np.unwrap(phase) if unwrap else phase
 
 def fft(data, length):
     """ """
