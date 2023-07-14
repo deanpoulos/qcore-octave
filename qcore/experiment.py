@@ -455,8 +455,6 @@ class Experiment:
                         data,
                         prev_count,
                         incoming_count,
-                        self._qua_sweeps,
-                        self._datasets,
                         qcore_sweep_point,
                     )
 
@@ -477,9 +475,7 @@ class Experiment:
             else:
                 plotter.plot(message=f"{plot_msg} [DONE]", stop=True)
 
-    def process_data(
-        self, data, prev_count, incoming_count, sweeps, datasets, qcorew_sweep_point
-    ):
+    def process_data(self, data, prev_count, incoming_count, qcore_sweep_point):
         """Subclass(es) to implement process_data()"""
         pass
 
