@@ -8,7 +8,7 @@ from qcore.helpers.logger import logger
 from qcore.libs.data_fns import DATAFN_MAP
 from qcore.libs.fit_fns import FITFN_MAP
 from qcore.libs.qua_macros import QuaVariable
-from qcore.variables.sweeps import BaseSweep
+from qcore.variables.sweeps import BaseSweep, Sweep
 
 
 class DatasetInitializationError(Exception):
@@ -53,6 +53,7 @@ class Dataset(QuaVariable):
         self.save = save
         self.plot = plot
 
+        self._axes = None
         self.axes = axes
         self.dtype = kwargs.get("dtype", float)
         self.units = kwargs.get("units", "A.U.")
@@ -79,6 +80,25 @@ class Dataset(QuaVariable):
     def __repr__(self) -> str:
         """ """
         return f"{self.__class__.__name__} '{self.name}'"
+
+    @property
+    def axes(self):
+        """ """
+        return self._axes
+
+    @axes.setter
+    def axes(self, value):
+        """ """
+        if value is None:
+            self._axes = value
+        else:
+            axes = []
+            for ax in value:
+                if isinstance(ax, Sweep):
+                    axes.append(ax.sweep)
+                elif isinstance(ax, BaseSweep):
+                    axes.append(ax)
+            self._axes = axes
 
     @property
     def datafn(self):
@@ -115,9 +135,9 @@ class Dataset(QuaVariable):
     @property
     def shape(self):
         """ """
-        if self.axes is None:
+        if self._axes is None:
             return
-        return tuple(i.length if isinstance(i, BaseSweep) else i for i in self.axes)
+        return tuple(i.length if isinstance(i, BaseSweep) else i for i in self._axes)
 
     @property
     def sweep_data(self):
