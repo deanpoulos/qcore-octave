@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "qcore"
-version = "1.2.0"
+version = "1.2.1"
 description = "The codebase for running circuit QED experiments in qcrew's lab"
 authors = ["Atharv Joshi <atharvjoshi@ymail.com>"]
 license = "MIT"

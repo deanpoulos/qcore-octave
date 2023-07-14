@@ -96,3 +96,7 @@ class QM(Instrument):
     def fetch(self) -> tuple[dict[str, np.ndarray], int, int]:
         """ """
         return (self._qrf.fetch(), *self._qrf.counts)
+
+    def set_output_dc_offset_by_element(self, element: str, input: str, offset: float):
+        """ """
+        self._qm.set_output_dc_offset_by_element(element, input, offset) 

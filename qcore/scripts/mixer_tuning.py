@@ -11,11 +11,11 @@ import scipy.optimize
 from qcore.instruments import QM, SA124, LMS
 from qcore.modes.mode import Mode
 from qcore.pulses import ConstantPulse
-from qcore.helpers import logger, Stage
+from qcore.helpers import Stage
+from qcore.helpers.logger import logger
 
 from qm import _Program
 from qm.qua import infinite_loop_, program
-from qm.QuantumMachine import QuantumMachine
 
 
 class Parameter:
@@ -145,7 +145,6 @@ class MixerTuner:
     def __init__(self, sa: SA124) -> None:
         """ """
         self._sa: SA124 = sa
-        self._qm: QuantumMachine = None
         self._mode: Mode = None
         self._mode_lo: LMS = None
 
@@ -168,12 +167,14 @@ class MixerTuner:
         elif method == "NM":
             if is_tuned:
                 logger.success(f"LO already tuned to within {self.threshold} dBm!")
+                self._qm_job.halt()
                 return
             i_offset, q_offset = self._tune_lo_nm(center_idx, floor)
 
         if i_offset is not None and q_offset is not None:
             self._update_mixer_offsets({"I": i_offset, "Q": q_offset})
 
+        self._mode.remove_operations("mixer_tuning_constant_pulse")
         self._qm_job.halt()
 
     def tune_sb(self, mode: Mode, method: str = "BF", **kwargs):
@@ -188,12 +189,14 @@ class MixerTuner:
         elif method == "NM":
             if is_tuned:
                 logger.success("SB already tuned to within {self.threshold}dBm!")
+                self._qm_job.halt()
                 return
             g_offset, p_offset = self._tune_sb_nm(center_idx, floor)
 
         if g_offset is not None and p_offset is not None:
             self._update_mixer_offsets({"G": g_offset, "P": p_offset})
 
+        self._mode.remove_operations("mixer_tuning_constant_pulse")
         self._qm_job.halt()
 
     def _setup(self, mode: Mode):
@@ -222,9 +225,8 @@ class MixerTuner:
             return None, None, None  # dummy values, they don't matter
         elif method == "NM":
             span, rbw, ref_pow = self.span, self.rbw, self.ref_power
-            fs, amps = self._sa.sweep(
-                center=center, span=span, rbw=rbw, ref_power=ref_pow
-            )
+            self._sa.configure(center=center, span=span, rbw=rbw, power=ref_pow)
+            fs, amps = self._sa.sweep()
             center_idx = math.ceil(self._sa.sweep_length / 2 + 1)
             stop, start = int(center_idx / 2), int(center_idx + (center_idx / 2))
             floor = (np.average(amps[:stop]) + np.average(amps[start:])) / 2
@@ -277,10 +279,8 @@ class MixerTuner:
 
         def objective_fn(params):
             g_offset, p_offset = params["G"].value, params["P"].value
-            correction_matrix = self._qm._config.get_mixer_correction_matrix(
-                g_offset, p_offset
-            )
-            self._qm_job.set_element_correction(self._mode.name, correction_matrix)
+            c_matrix = self._qm._config.get_correction_matrix(g_offset, p_offset)
+            self._qm_job.set_element_correction(self._mode.name, c_matrix)
             val = self._sa.single_sweep()
             logger.info(f"Measuring at G: {g_offset}, P: {p_offset}, amp: {val}")
             return val
@@ -297,7 +297,7 @@ class MixerTuner:
         logger.info(f"Minimizing {self._mode} SB leakage...")
 
         def objective_fn(offsets: tuple[float]) -> float:
-            c_matrix = self._qm._config.get_mixer_correction_matrix(*offsets)
+            c_matrix = self._qm._config.get_correction_matrix(*offsets)
             if any(x < -2 or x > 2 for x in c_matrix):
                 logger.info("Found out of bounds value in c-matrix")
                 return self._initial_contrast
@@ -414,15 +414,16 @@ class MixerTuner:
             func = lo_fn
 
         elif key == "SB":
-            center = self._mode_lo.lo_freq - self._mode.int_freq  # upper sideband to suppress
+            # sideband to suppress
+            center = self._mode_lo.lo_freq - self._mode.int_freq
             # do this to set the SA
-            self._sa.sweep(
-                center=center, span=self.span, rbw=self.rbw, ref_power=self.ref_pow
-            )
+            span, rbw, ref_pow = self.span, self.rbw, self.ref_power
+            self._sa.configure(center=center, span=span, rbw=rbw, power=ref_pow)
+            self._sa.sweep()
             center_idx = math.ceil(self._sa.sweep_length / 2 + 1)
 
             def sb_fn(offsets: tuple[float]) -> float:
-                c_matrix = self._qm._config.get_mixer_correction_matrix(*offsets)
+                c_matrix = self._qm._config.get_correction_matrix(*offsets)
                 self._qm_job.set_element_correction(self._mode.name, c_matrix)
                 _, amps = self._sa.sweep()
                 return amps[center_idx]
