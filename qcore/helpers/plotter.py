@@ -303,8 +303,6 @@ class Plotter:
                 cx, cy = spec.crosshair
                 cx.setPos(x)
                 cy.setPos(y)
-            else:
-                self.footer.setText(self._footer_text)
 
     def _plot_single(self, dataset: Dataset, plotspec: PlotSpec):
         """ """
