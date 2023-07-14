@@ -15,7 +15,7 @@ def create_params(**kwargs):
     for name, value in kwargs.items():
         if isinstance(value, dict):
             value = {k: v.item() for k, v in value.items() if isinstance(v, np.number)}
-        else:
+        elif isinstance(value, np.number):
             value = value.item()
         params[name] = value
     return lmfit.create_params(**params)
@@ -43,8 +43,9 @@ def atan(y, x):
         Ql = (fr / (max(x) - min(x))) * np.sqrt(len(x))
         pts = len(y) // 8
         theta = np.average((y[:pts] + y[-pts:]) / 2)
-        sign_dict = {"value": sign, "vary": False}
-        return create_params(fr=fr, Ql=Ql, theta=theta, sign=sign_dict)
+        params = create_params(fr=fr, Ql=Ql, theta=theta, sign=sign)
+        params["sign"].set(vary=False)
+        return params
 
     result = Model(fn).fit(y, params(), x=x)
     return result.best_fit, result.best_values
