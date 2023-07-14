@@ -96,7 +96,7 @@ class Dataset(QuaVariable):
             for ax in value:
                 if isinstance(ax, Sweep):
                     axes.append(ax.sweep)
-                elif isinstance(ax, BaseSweep):
+                else:
                     axes.append(ax)
             self._axes = axes
 
