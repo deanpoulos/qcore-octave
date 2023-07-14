@@ -162,7 +162,7 @@ class Mode(Resource):
         for key in names:
             if key in self._operations:
                 operation = self._operations[key]
-                self._operations.remove(operation)
+                del self._operations[key]
                 logger.debug(f"Removed {self} '{key}' {operation = }.")
             else:
                 logger.warning(f"Operation '{key}' does not exist for {self}.")
