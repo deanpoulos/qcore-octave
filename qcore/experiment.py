@@ -434,9 +434,8 @@ class Experiment:
                     # update primary datasets first
                     for name, dset in self._datasets.items():
                         if name in self.primary_datasets:
-                            dset.data = data[name]
-                            dset.index = (slice(prev_count, incoming_count), ...)
-                            dset.avg = data[f"{name}_avg"]  # update running average
+                            rawdata = (data[name], data[f"{name}_avg"])
+                            dset.update(rawdata, prev_count, incoming_count)
 
                     # update derived datasets
                     for name, dset in self._datasets.items():

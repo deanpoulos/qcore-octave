@@ -313,13 +313,10 @@ class Plotter:
         plot_data_item = plotspec.plot_data_items[0]
         sweep_data = list(dataset.sweep_data.values())
         x = sweep_data[-1]
-        attr_to_plot = "data"
-        if "plot_avg" in dataset.plot_args:
-            attr_to_plot = "avg" if dataset.plot_args["plot_avg"] else "data"
-        y = getattr(dataset, attr_to_plot)
+        y = dataset.avg
         if plotspec.plot_type == "image":
             y = sweep_data[-2]
-            z = getattr(dataset, attr_to_plot)
+            z = dataset.avg
             self._plot_2D(plot_data_item, x, y, z)
             plotspec.cbar.setLevels(low=np.min(z), high=np.max(z))
         elif plotspec.plot_type in ("scatter", "line"):
@@ -338,10 +335,7 @@ class Plotter:
     def _plot_multiple(self, dataset: Dataset, plotspec: PlotSpec):
         """ """
         sweep_data = list(dataset.sweep_data.values())
-        attr_to_plot = "data"
-        if "plot_avg" in dataset.plot_args:
-            attr_to_plot = "avg" if dataset.plot_args["plot_avg"] else "data"
-        data = getattr(dataset, attr_to_plot)
+        data = dataset.avg
         x, y, err = sweep_data[-1], sweep_data[-2], dataset.sem
         all_fit_params = {}
         for i in range(plotspec.num_data_items):

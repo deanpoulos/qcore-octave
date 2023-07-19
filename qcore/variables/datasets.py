@@ -8,7 +8,7 @@ from qcore.helpers.logger import logger
 from qcore.libs.data_fns import DATAFN_MAP
 from qcore.libs.fit_fns import FITFN_MAP
 from qcore.libs.qua_macros import QuaVariable
-from qcore.variables.sweeps import BaseSweep, Sweep
+from qcore.variables.sweeps import Sweep
 
 
 class DatasetInitializationError(Exception):
@@ -18,6 +18,8 @@ class DatasetInitializationError(Exception):
 class Dataset(QuaVariable):
     """Class that allows users to specify Datasets for handling data obtained from Experiments.
 
+    We save raw Dataset data and plot averaged data. Assume the outermost axis to be the averaging axis.
+    
     list of acceptable kwargs, their meanings, and default values:
     - data (initial data assigned to the dataset default: np.zeros(dataset.shape))
     - dtype (data type the values are saved to the datafile with, default: float)
@@ -29,7 +31,6 @@ class Dataset(QuaVariable):
     - plot_args
         - plot_type: ("scatter", "line", "image), default = "scatter"
         - plot_err: whether or not to show errorbars, default = True
-        - plot_avg: whether or not to plot "dataset.avg", default is to plot "dataset.data"
         - xlabel: str
         - ylabel: str
         - title: str
@@ -40,7 +41,7 @@ class Dataset(QuaVariable):
     def __init__(
         self,
         name: str,  # name of the dataset, as it will appear in the datafile
-        axes: list[Union[BaseSweep, int]] = None,  # the dataset's dimensions
+        axes: list[Union[Sweep, int]] = None,  # the dataset's dimensions
         stream: bool = False,  # False to not stream data from OPX, True to stream non-adc data, and 1 or 2 to stream adc data from input ports 1 or 2 respectively
         save: bool = False,  # whether or not to save this Dataset to a datafile
         plot: bool = False,  # whether or not to plot this Dataset during live plot
@@ -55,6 +56,7 @@ class Dataset(QuaVariable):
 
         self._axes = None
         self.axes = axes
+        self.index = None  # for saving data
         self.dtype = kwargs.get("dtype", float)
         self.units = kwargs.get("units", "A.U.")
 
@@ -65,7 +67,7 @@ class Dataset(QuaVariable):
         self.inputs = kwargs.get("inputs", ())
         self.datafn_args = kwargs.get("datafn_args", {})
         self.data = kwargs.get("data")
-        self.avg, self.sem, self._var, self._count = None, None, None, 0
+        self.avg, self.sem, self.var, self.std, self.count = None, None, None, None, 0
 
         self._fitfn = None
         fitfn = kwargs.get("fitfn")
@@ -89,16 +91,7 @@ class Dataset(QuaVariable):
     @axes.setter
     def axes(self, value):
         """ """
-        if value is None:
-            self._axes = value
-        else:
-            axes = []
-            for ax in value:
-                if isinstance(ax, Sweep):
-                    axes.append(ax.sweep)
-                else:
-                    axes.append(ax)
-            self._axes = axes
+        self._axes = value
 
     @property
     def datafn(self):
@@ -137,16 +130,16 @@ class Dataset(QuaVariable):
         """ """
         if self._axes is None:
             return
-        return tuple(i.length if isinstance(i, BaseSweep) else i for i in self._axes)
+        return tuple(i.length if isinstance(i, Sweep) else i for i in self._axes)
 
     @property
     def sweep_data(self):
         """ """
-        if self.axes is None:
+        if self._axes is None:
             return
         sdata = {}
         for idx, ax in enumerate(self.axes):
-            if isinstance(ax, BaseSweep):
+            if isinstance(ax, Sweep):
                 sdata[ax.name] = ax.data
             else:
                 sdata[str(idx)] = np.arange(1, ax + 1, 1, dtype=int)
@@ -157,33 +150,37 @@ class Dataset(QuaVariable):
         """ """
         return {"name": self.name, "dtype": self.dtype, "units": self.units}
 
-    def initialize(self, axes: list[BaseSweep]) -> None:
+    def initialize(self, axes: list[Sweep]) -> None:
         """ """
         self.axes = axes
         shape = list(self.shape)
         self.data = np.zeros(shape)
         self.avg = np.average(self.data, axis=0)
+        self.std = np.average(self.data, axis=0)
         self.sem = np.average(self.data, axis=0)
-        self._var = np.average(self.data, axis=0)
+        self.var = np.average(self.data, axis=0)
         if self.stream:
             shape.pop(0)
             self.buffer = shape
 
     def update(self, datasets, prev_count, incoming_count) -> None:
-        """ FOR DERIVED DATASETS ONLY """
+        """ """
         # update only if new data found
         if prev_count == incoming_count:
             return
-        
-        self.data = self.datafn(datasets, **self.datafn_args)
-        self.index = ...
+
+        if self.datafn is None:  # primary dataset
+            self.data, avg = datasets  
+        else:  # derived dataset
+            self.data = self.datafn(datasets, **self.datafn_args)
+            data_for_avg = [d.avg if isinstance(d, Dataset) else d for d in datasets]
+            avg = self.datafn(data_for_avg, **self.datafn_args)
 
         # update index of next batch of data to be inserted in the datafile
-        #self.index = (slice(prev_count, incoming_count), ...)
+        self.index = (slice(prev_count, incoming_count), ...)
 
-        # update avg and sem
-        #k = prev_count + incoming_count
-        #avg = self.avg + np.sum(self.data - self.avg, axis=0) / k
-        #estimator = (self.data - self.avg) * (self.data - avg)
-        #var = (self._var + np.sum(estimator, axis=0)) / (k - 1)
-        #self.avg, self._var, self.sem = avg, var, np.sqrt(var / (k))
+        # calculate stderr
+        k = prev_count + incoming_count
+        estimator = (self.data - self.avg) * (self.data - avg)
+        self.var = (self.var + np.sum(estimator, axis=0)) / (k - 1)
+        self.avg, self.std, self.sem = avg, np.sqrt(self.var), np.sqrt(self.var / (k))
