@@ -156,6 +156,7 @@ class PlotWidget(pg.GraphicsLayoutWidget):
         ImageExporter(self.ci).export(self.filename)
         super().closeEvent(*args, **kwargs)
 
+
 class Plotter:
     """ """
 
@@ -203,13 +204,16 @@ class Plotter:
 
     def run(self) -> None:
         """ """
+        pg.setConfigOptions(
+            antialias=True, imageAxisOrder="row-major", background="w", foreground="k"
+        )
+
         self.app = pg.mkQApp()
         sz, br = Plotter.WINDOW_SIZE, Plotter.WINDOW_BORDER
         self.layout = PlotWidget(filename=self.filename, show=True, size=sz, border=br)
         self.layout.showMaximized()
 
         self.layout.setWindowTitle("Qcore Plotter")
-        pg.setConfigOptions(antialias=True, imageAxisOrder="row-major")
 
         self.plotspec: dict[Dataset, PlotSpec] = {d: PlotSpec(d) for d in self.datasets}
 
