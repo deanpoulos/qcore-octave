@@ -5,6 +5,7 @@ from inspect import isfunction
 import numpy as np
 from scipy import signal
 
+# the 'data' argument must be a sequence of np arrays to be unpacked by the data_fn
 
 def mag(data):
     """absolute value of two inputs x and y"""
