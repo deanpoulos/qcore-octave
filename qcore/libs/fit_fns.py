@@ -105,7 +105,7 @@ def double_gaussian_2dhist(z, y, x):
 
         return create_params(y0=y0, x0=x0, y1=y1, x1=x1, a0=a0, a1=a1, sigma=sigma)
 
-    result = Model(fn).fit(z, params(z, y, x), y=y, x=x)
+    result = Model(fn, independent_vars=["x", "y"]).fit(z, params(z, y, x), y=y, x=x)
     return result.best_fit, result.best_values
 
 
@@ -204,7 +204,7 @@ def gaussian2d_symmetric(z, y, x):
             ofs=zofs,
         )
 
-    result = Model(fn).fit(z, params(z, y, x), y=y, x=x)
+    result = Model(fn, independent_vars=["x", "y"]).fit(z, params(z, y, x), y=y, x=x)
     return result.best_fit, result.best_values
 
 
