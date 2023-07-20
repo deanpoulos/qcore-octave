@@ -34,12 +34,6 @@ class Sweep(QuaVariable):
         """ """
         self.name = name
         self.target = target
-
-        if self.is_qua_sweep:
-            super().__init__(self.dtype, stream=True, tag=self.name, buffer=self.shape)
-        else:
-            super().__init__(self.dtype, stream=False, tag=self.name, buffer=self.shape)
-
         self.dtype = dtype
         self.units = units
         self.save = save
@@ -54,6 +48,12 @@ class Sweep(QuaVariable):
         self.sweep_points = None
         self._data = None
         self.index = ...
+
+        self.initialize()
+        if self.is_qua_sweep:
+            super().__init__(self.dtype, stream=True, tag=self.name, buffer=self.shape)
+        else:
+            super().__init__(self.dtype, stream=False, tag=self.name, buffer=self.shape)
 
     @property
     def is_qua_sweep(self) -> bool:
