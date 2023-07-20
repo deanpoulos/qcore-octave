@@ -36,7 +36,7 @@ def atan(y, x):
         """
         return theta + 2 * np.arctan(2 * Ql * sign * (x / fr - 1))
 
-    def params():
+    def params(y, x):
         """ """
         sign = 1 if y[0] < y[-1] else -1
         fr = x[np.argmax(np.gradient(y))]
@@ -47,7 +47,7 @@ def atan(y, x):
         params["sign"].set(vary=False)
         return params
 
-    result = Model(fn).fit(y, params(), x=x)
+    result = Model(fn).fit(y, params(y, x), x=x)
     return result.best_fit, result.best_values
 
 
@@ -60,14 +60,14 @@ def displacement_cal(y, x):
         nbars = alphas**2
         return ofs + amp * nbars**0 / math.factorial(0) * np.exp(-nbars)
 
-    def params():
+    def params(y, x):
         """ """
         mul = -1 if (x[-1] > x[0]) else 1
         amp = mul * (y[-1] - y[0])
         ofs = np.max(y) if (amp < 0) else np.min(y)
         return create_params(dispscale=1.0, ofs=ofs, amp=amp, n=0)
 
-    result = Model(fn).fit(y, params(), x=x)
+    result = Model(fn).fit(y, params(y, x), x=x)
     return result.best_fit, result.best_values
 
 
@@ -81,7 +81,7 @@ def double_gaussian_2dhist(z, y, x):
         a0_exp, a1_exp = np.exp(-0.5 * r0 / sigma**2), np.exp(-0.5 * r1 / sigma**2)
         return ofs + a0 * a0_exp + a1 * a1_exp
 
-    def params():
+    def params(z, y, x):
         """ """
         zofs = np.mean([z[0, :], z[-1, :], z[:, 0], z[:, -1]])
         z = z - zofs
@@ -105,7 +105,7 @@ def double_gaussian_2dhist(z, y, x):
 
         return create_params(y0=y0, x0=x0, y1=y1, x1=x1, a0=a0, a1=a1, sigma=sigma)
 
-    result = Model(fn).fit(z, params(), y=y, x=x)
+    result = Model(fn).fit(z, params(z, y, x), y=y, x=x)
     return result.best_fit, result.best_values
 
 
@@ -116,7 +116,7 @@ def exp_decay(y, x):
         """ """
         return A * np.exp(-x / tau) + ofs
 
-    def params():
+    def params(y, x):
         """ """
         ofs = y[-1]
         y = y - ofs
@@ -124,7 +124,7 @@ def exp_decay(y, x):
         tau_dict = {"value": tau, "min": 0, "max": 100 * tau}
         return create_params(A=y[0], tau=tau_dict, ofs=ofs)
 
-    result = Model(fn).fit(y, params(), x=x)
+    result = Model(fn).fit(y, params(y, x), x=x)
     return result.best_fit, result.best_values
 
 
@@ -134,7 +134,7 @@ def exp_decay_sine(y, x):
     def fn(x, amp=1, f0=0.05, phi=np.pi / 4, ofs=0, tau=0.5):
         return amp * np.sin(2 * np.pi * x * f0 + phi) * np.exp(-x / tau) + ofs
 
-    def params():
+    def params(y, x):
         """ """
         params = sine(y, x, return_params=True)
         params.add("tau", value=np.average(x), min=0, max=10 * x[-1])
@@ -151,7 +151,7 @@ def gaussian(y, x):
         """ """
         return ofs + amp * np.exp(-((x - x0) ** 2) / (2 * sig**2))
 
-    def params():
+    def params(y, x):
         """ """
         ofs = (y[0] + y[-1]) / 2
         peak_idx = np.argmax(abs(y - ofs))
@@ -165,7 +165,46 @@ def gaussian(y, x):
             amp={"value": y[peak_idx] - ofs, "min": -3 * yrange, "max": 3 * yrange},
         )
 
-    result = Model(fn).fit(y, params(), x=x)
+    result = Model(fn).fit(y, params(y, x), x=x)
+    return result.best_fit, result.best_values
+
+
+def gaussian2d_symmetric(z, y, x):
+    """ """
+
+    def fn(y, x, y0=0, x0=0, sigma=1, area=1, ofs=0):
+        """ """
+        r2 = (x - x0) ** 2 / (2 * sigma**2) + (y - y0) ** 2 / (2 * sigma**2)
+        return ofs + area / (2 * sigma**2) / np.sqrt(np.pi / 2) * np.exp(-r2)
+
+    def params(z, y, x):
+        """ """
+        zofs = np.mean([z[0, :], z[-1, :], z[:, 0], z[:, -1]])
+        z = z - zofs
+        maxidxy = np.argmax(np.abs(z).sum(axis=1))
+        maxidxx = np.argmax(np.abs(z).sum(axis=0))
+
+        xspan = x[-1, 0] - x[0, 0]
+        yspan = y[0, -1] - y[0, 0]
+
+        sigma = (xspan + yspan) / 2 / 5
+
+        maxidx0 = np.argmax(np.abs(z))
+        dmin = (np.max(x) - np.min(x)) / 8
+        mask = (
+            (x - x.flatten()[maxidxx]) ** 2 + (y - y.flatten()[maxidx0]) ** 2
+        ) > dmin**2
+        area = np.sum(z[mask])
+
+        return create_params(
+            x0=x[maxidxy, maxidxx],
+            y0=y[maxidxy, maxidxx],
+            sigma=sigma,
+            area=area,
+            ofs=zofs,
+        )
+
+    result = Model(fn).fit(z, params(z, y, x), y=y, x=x)
     return result.best_fit, result.best_values
 
 
@@ -182,7 +221,7 @@ def lorentzian(y, x, return_params=False):
         """ """
         return np.abs(ofs + height / (1 + 2j * ((x - fr) / fwhm)))
 
-    def params():
+    def params(y, x):
         """ """
         pts = len(y) // 8
         ofs = np.average((y[:pts] + y[-pts:]) / 2)
@@ -195,7 +234,7 @@ def lorentzian(y, x, return_params=False):
         fwhm = x[fr_idx + np.abs(right - amp).argmin()] - x[np.abs(left - amp).argmin()]
         return create_params(fr=fr, ofs=ofs, height=height, fwhm=fwhm)
 
-    fit_params = params()
+    fit_params = params(y, x)
     if return_params:
         return fit_params
     result = Model(fn).fit(y, fit_params, x=x)
@@ -209,7 +248,7 @@ def lorentzian_asymmetric(y, x):
         """ """
         return np.abs(ofs + height * np.exp(1j * phi) / (1 + 2j * ((x - fr) / fwhm)))
 
-    def params():
+    def params(y, x):
         """ """
         params = lorentzian(y, x, return_params=True)
         ofs, height, fr = params["ofs"].value, params["height"].value, params["fr"]
@@ -219,7 +258,7 @@ def lorentzian_asymmetric(y, x):
         fr.set(value=x[fr_idx])
         return params
 
-    result = Model(fn).fit(y, params(), x=x)
+    result = Model(fn).fit(y, params(y, x), x=x)
     return result.best_fit, result.best_values
 
 
@@ -230,7 +269,7 @@ def sine(y, x, return_params=False):
         """ """
         return ofs + amp * np.sin(2 * np.pi * f0 * x + phi)
 
-    def params():
+    def params(y, x):
         """ """
         fs = np.fft.rfftfreq(len(x), x[1] - x[0])
         ofs = np.mean(y)
@@ -243,7 +282,7 @@ def sine(y, x, return_params=False):
             phi={"value": np.angle(fft[idx]), "min": -2 * np.pi, "max": 2 * np.pi},
         )
 
-    fit_params = params()
+    fit_params = params(y, x)
     if return_params:
         return fit_params
     result = Model(fn).fit(y, fit_params, x=x)
