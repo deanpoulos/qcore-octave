@@ -7,10 +7,11 @@ import numpy as np
 import pyqtgraph as pg
 from pyqtgraph.exporters import ImageExporter
 from PyQt6 import QtCore as qtc
+from PyQt6 import QtWidgets as qtw
 
 from qcore.helpers.logger import logger
 from qcore.variables.datasets import Dataset
-from qcore.variables.sweeps import BaseSweep
+from qcore.variables.sweeps import Sweep
 
 
 class PlotterInitializationError(Exception):
@@ -120,13 +121,13 @@ class PlotSpec:
         ylabel = dataset.plot_args.get("ylabel", "")
         title = dataset.plot_args.get("title", "")
         if not xlabel:
-            if axes and isinstance(axes[-1], BaseSweep):
+            if axes and isinstance(axes[-1], Sweep):
                 xaxis = axes[-1]
                 xlabel = f"{xaxis.name} ({xaxis.units})"
         if not ylabel:
             if data_dim == 2 and self.plot_type == "image":
                 yaxis = axes[-2]
-                if isinstance(yaxis, BaseSweep):
+                if isinstance(yaxis, Sweep):
                     ylabel = f"{yaxis.name} ({yaxis.units})"
             else:
                 ylabel = f"{dataset.name} ({dataset.units})"
@@ -209,11 +210,12 @@ class Plotter:
         )
 
         self.app = pg.mkQApp()
-        sz, br = Plotter.WINDOW_SIZE, Plotter.WINDOW_BORDER
-        self.layout = PlotWidget(filename=self.filename, show=True, size=sz, border=br)
-        self.layout.showMaximized()
-
-        self.layout.setWindowTitle("Qcore Plotter")
+        self.window = qtw.QMainWindow()
+        self.window.resize(*Plotter.WINDOW_SIZE)
+        self.layout = PlotWidget(filename=self.filename)
+        self.window.setCentralWidget(self.layout)
+        self.window.show()
+        self.window.setWindowTitle("Qcore plotter")
 
         self.plotspec: dict[Dataset, PlotSpec] = {d: PlotSpec(d) for d in self.datasets}
 
@@ -331,13 +333,14 @@ class Plotter:
                 self._plot_1D(plot_fit_item, x, best_fit)
                 fit_str = f", ".join(f"{k}: {v:.3g}" for k, v in fit_params.items())
                 plotspec.fit_label.setText(fit_str)
+                dataset.best_fit, dataset.fit_params = best_fit, fit_params
 
     def _plot_multiple(self, dataset: Dataset, plotspec: PlotSpec):
         """ """
         sweep_data = list(dataset.sweep_data.values())
         data = dataset.avg
         x, y, err = sweep_data[-1], sweep_data[-2], dataset.sem
-        all_fit_params = {}
+        all_best_fits, all_fit_params = [], {}
         for i in range(plotspec.num_data_items):
             z = data[i]
             plot_data_item = plotspec.plot_data_items[i]
@@ -351,7 +354,11 @@ class Plotter:
                 to_round = (float, np.floating)
                 ytxt = f"{y[i]:.5f}" if isinstance(y[i], to_round) else f"{y[i]}"
                 all_fit_params[ytxt] = fit_params
+                all_best_fits.append(best_fit)
                 self._plot_1D(plot_fit_item, x, best_fit)
+
+        dataset.best_fit = np.array(all_best_fits)
+        dataset.fit_params = list(all_fit_params.values())
 
         fit_str = ""
         for label, fit_params in all_fit_params.items():
