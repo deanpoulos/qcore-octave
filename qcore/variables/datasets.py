@@ -173,9 +173,10 @@ class Dataset(QuaVariable):
         if self.datafn is None:  # primary dataset
             self.data, avg = datasets  
         else:  # derived dataset
-            self.data = self.datafn(datasets, **self.datafn_args)
-            data_for_avg = [d.avg if isinstance(d, Dataset) else d for d in datasets]
-            avg = self.datafn(data_for_avg, **self.datafn_args)
+            input_data = [d.data for d in datasets]
+            self.data = self.datafn(input_data, **self.datafn_args)
+            input_avg = [d.avg if isinstance(d, Dataset) else d.data for d in datasets]
+            avg = self.datafn(input_avg, **self.datafn_args)
 
         # update index of next batch of data to be inserted in the datafile
         self.index = (slice(prev_count, incoming_count), ...)
@@ -184,4 +185,4 @@ class Dataset(QuaVariable):
         k = prev_count + incoming_count
         estimator = (self.data - self.avg) * (self.data - avg)
         self.var = (self.var + np.sum(estimator, axis=0)) / (k - 1)
-        self.avg, self.std, self.sem = avg, np.sqrt(self.var), np.sqrt(self.var / (k))
+        self.avg, self.std, self.sem = avg, np.sqrt(self.var), np.sqrt(self.var / k)

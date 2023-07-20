@@ -42,11 +42,9 @@ class PlotSpec:
 
         # determine the number of data items per plot
         shape = dataset.shape
-        data_dim = len(shape)
-        if not dataset.inputs:  # is a primary dataset TODO set a better criterion
-            data_dim = len(shape) - 1  # discard 1 averaging dimension "N"
+        data_dim = len(shape) - 1  # discard 1 averaging dimension "N"
         self.num_data_items = 1  # default number of data items in one plot item
-        if data_dim == 2 and not self.plot_type == "image":
+        if data_dim == 3 and not self.plot_type == "image":
             self.num_data_items = shape[-2]
         elif data_dim == 1 and self.plot_type == "image":
             msg = f"Invalid dataset {shape = } dimensions for '{self.plot_type}' plot."
@@ -145,16 +143,18 @@ class PlotSpec:
 class PlotWidget(pg.GraphicsLayoutWidget):
     """ """
 
-    def __init__(self, filename, *args, is_closed=False, **kwargs):
+    def __init__(self, filename, window, *args, **kwargs):
         """ """
         super().__init__(*args, **kwargs)
         self.filename = str(filename)
+        self.window = window
         self.window_closed = threading.Event()  # set if plot window closed by the user
 
     def closeEvent(self, *args, **kwargs):
         """ """
         self.window_closed.set()
         ImageExporter(self.ci).export(self.filename)
+        self.window.close()
         super().closeEvent(*args, **kwargs)
 
 
@@ -212,7 +212,7 @@ class Plotter:
         self.app = pg.mkQApp()
         self.window = qtw.QMainWindow()
         self.window.resize(*Plotter.WINDOW_SIZE)
-        self.layout = PlotWidget(filename=self.filename)
+        self.layout = PlotWidget(filename=self.filename, window=self.window)
         self.window.setCentralWidget(self.layout)
         self.window.show()
         self.window.setWindowTitle("Qcore plotter")
