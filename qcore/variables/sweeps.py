@@ -49,11 +49,10 @@ class Sweep(QuaVariable):
         self._data = None
         self.index = ...
 
-        self.initialize()
         if self.is_qua_sweep:
-            super().__init__(self.dtype, stream=True, tag=self.name, buffer=self.shape)
+            super().__init__(self.dtype, stream=True, tag=self.name)
         else:
-            super().__init__(self.dtype, stream=False, tag=self.name, buffer=self.shape)
+            super().__init__(self.dtype, stream=False, tag=self.name)
 
     @property
     def is_qua_sweep(self) -> bool:
@@ -82,6 +81,9 @@ class Sweep(QuaVariable):
             raise ValueError(f"Badly specified sweep '{self.name}'.")
 
         self.sweep_points = sweep_pts
+
+        self.tag = self.name
+        self.buffer = self.shape
 
     @property
     def data(self):
