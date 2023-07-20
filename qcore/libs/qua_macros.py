@@ -75,6 +75,9 @@ class QuaVariable:
 
     def process_stream(self) -> None:
         """ """
+        if not self.stream:
+            return
+
         adc_trace = self.is_adc_trace
         if adc_trace == 1:
             self.qua_stream.input1().save_all(self.tag)
