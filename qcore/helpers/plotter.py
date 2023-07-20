@@ -143,18 +143,16 @@ class PlotSpec:
 class PlotWidget(pg.GraphicsLayoutWidget):
     """ """
 
-    def __init__(self, filename, window, *args, **kwargs):
+    def __init__(self, filename, *args, **kwargs):
         """ """
         super().__init__(*args, **kwargs)
         self.filename = str(filename)
-        self.window = window
         self.window_closed = threading.Event()  # set if plot window closed by the user
 
     def closeEvent(self, *args, **kwargs):
         """ """
         self.window_closed.set()
         ImageExporter(self.ci).export(self.filename)
-        self.window.close()
         super().closeEvent(*args, **kwargs)
 
 
@@ -210,12 +208,9 @@ class Plotter:
         )
 
         self.app = pg.mkQApp()
-        self.window = qtw.QMainWindow()
-        self.window.resize(*Plotter.WINDOW_SIZE)
-        self.layout = PlotWidget(filename=self.filename, window=self.window)
-        self.window.setCentralWidget(self.layout)
-        self.window.show()
-        self.window.setWindowTitle("Qcore plotter")
+        self.layout = PlotWidget(filename=self.filename, show=True)
+        self.layout.showMaximized()
+        self.layout.setWindowTitle("Qcore plotter")
 
         self.plotspec: dict[Dataset, PlotSpec] = {d: PlotSpec(d) for d in self.datasets}
 
