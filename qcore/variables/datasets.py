@@ -73,6 +73,7 @@ class Dataset(QuaVariable):
         fitfn = kwargs.get("fitfn")
         if fitfn is not None:
             self.fitfn = fitfn
+        self.best_fit, self.fit_params = None
 
         self.plot_args = kwargs.get("plot_args", {})
 
