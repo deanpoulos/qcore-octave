@@ -139,7 +139,7 @@ class ReadoutTrainer:
                 if excite_qubit:
                     # qua.align("FLUX", self._qubit.name)
                     self._qubit.play(qubit_pi_pulse)
-                    qua.align(self._rr, self._qubit.name)
+                    qua.align(self._rr, self._qubit)
 
                 self._rr.measure(readout_pulse, stream=adc)
                 qua.wait(wait_time, self._rr)
