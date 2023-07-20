@@ -196,7 +196,7 @@ class ReadoutTrainer:
 
         # Update the readout pulse with the npz file path
         (readout_pulse,) = self._rr.get_operations(self.readout_pulse)
-        readout_pulse.weights = path
+        readout_pulse.weights = str(path)
 
         return weights
 
