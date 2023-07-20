@@ -20,7 +20,7 @@ from qcore.modes.mode import Mode
 from qcore.pulses.pulse import Pulse
 from qcore.resource import Resource
 from qcore.variables.datasets import Dataset
-from qcore.variables.sweeps import Sweep, BaseSweep, QuaSweep, QcoreSweep
+from qcore.variables.sweeps import Sweep
 
 
 class ExperimentInitializationError(Exception):
@@ -130,7 +130,7 @@ class ExperimentManager:
                 logger.error(message)
                 raise SweepValidationError(message)
 
-    def validate_base_sweeps(self, sweeps: list[BaseSweep]):
+    def init_sweeps(self, sweeps: list[Sweep]):
         """ """
         qcore_sweeps, qua_sweeps = [], []
         qcore_msg = "Among all sweeps, only 1 outermost Qcore Sweep can be specified."
@@ -140,13 +140,15 @@ class ExperimentManager:
         )
 
         for idx, sweep in enumerate(sweeps):
-            if isinstance(sweep, QuaSweep):
+            if sweep.is_qua_sweep:
                 qua_sweeps.append(sweep)
-            elif isinstance(sweep, QcoreSweep):
+            else:
                 if idx != 0:
                     logger.error(qcore_msg)
                     raise SweepValidationError(qcore_msg)
                 qcore_sweeps.append(sweep)
+
+            sweep.initialize()
 
         if len(qcore_sweeps) > 1:
             logger.error(qcore_msg)
@@ -166,7 +168,7 @@ class ExperimentManager:
         self,
         datasets: list[Dataset],
         primary_datasets: list[str],
-        sweep_dict: dict[str, BaseSweep],
+        sweep_dict: dict[str, Sweep],
     ) -> None:
         """ """
         dset_dict = {dataset.name: dataset for dataset in datasets}
@@ -204,7 +206,7 @@ class ExperimentManager:
         self,
         datasets: dict[str, Dataset],
         primary_datasets: list[str],
-        sweep_dict: dict[str, QuaSweep],
+        sweep_dict: dict[str, Sweep],
     ) -> None:
         """ """
         # prepare Dataset axes
@@ -261,26 +263,26 @@ class Experiment:
         instruments, all_modes, all_pulses = self._manager.get_resources(self._folder)
 
         self._resources = {**instruments, **all_modes, **all_pulses}
-        self._instruments = instruments
-        self._modes = self._manager.select_modes(all_modes, modes)
-        self._pulses = self._manager.select_pulses(all_pulses, pulses)
+        self.instruments = instruments
+        self.modes = self._manager.select_modes(all_modes, modes)
+        self.pulses = self._manager.select_pulses(all_pulses, pulses)
         self._configure_resources()
 
-        # obtain BaseSweep instances from Sweeps specified by the user
+        # process Sweeps specified by the user
         primary_sweeps, primary_datasets = self.primary_sweeps, self.primary_datasets
         self._manager.validate_sweeps(sweeps, primary_sweeps, **kwargs)
-        self._sweeps: dict[str, BaseSweep] = {swp.name: swp.sweep for swp in sweeps}
-        self._manager.validate_base_sweeps(list(self._sweeps.values()))
+        self.sweeps: dict[str, Sweep] = {swp.name: swp for swp in sweeps}
+        self._manager.init_sweeps(sweeps)
 
-        # obtain BaseDataset instances from Datasets specified by the user
-        self._manager.validate_datasets(datasets, primary_datasets, self._sweeps)
-        self._datasets: dict[str, Dataset] = {dset.name: dset for dset in datasets}
+        # process Datasets specified by the user
+        self._manager.validate_datasets(datasets, primary_datasets, self.sweeps)
+        self.datasets: dict[str, Dataset] = {dset.name: dset for dset in datasets}
 
         self.fetch_interval = fetch_interval
 
         # container for the various types of QuaVariables involved in this experiment
         self._qua_variables: dict[str, QuaVariable] = {}  # for all QuaVariables
-        self._qua_sweeps: dict[str, QuaSweep] = {}
+        self._qua_sweeps: dict[str, Sweep] = {}
         self._qua_datasets = {}
         for k, v in kwargs.items():
             if isinstance(v, QuaVariable):
@@ -290,16 +292,16 @@ class Experiment:
                 setattr(self, k, v)  # set additional "kwargs" as Experiment attributes
 
         self.repetitions = 1
-        for sweep in self._sweeps.values():
-            if isinstance(sweep, QuaSweep):
+        for sweep in self.sweeps.values():
+            if sweep.is_qua_sweep:
                 self._qua_variables[sweep.name] = sweep
                 self._qua_sweeps[sweep.name] = sweep
 
                 if sweep.name == "N":
                     self.repetitions = sweep.length
 
-        self._manager.init_datasets(self._datasets, primary_datasets, self._qua_sweeps)
-        for dataset in self._datasets.values():
+        self._manager.init_datasets(self.datasets, primary_datasets, self._qua_sweeps)
+        for dataset in self.datasets.values():
             if dataset.stream:  # is qua dataset
                 self._qua_variables[dataset.name] = dataset
                 self._qua_datasets[dataset.name] = dataset
@@ -315,14 +317,14 @@ class Experiment:
         # make Mode and Pulse objects Experiment attributes for easy access
         # for each Mode, select only the subset of Pulses required for this Experiment
         """
-        for mode_name, mode in self._modes.items():
+        for mode_name, mode in self.modes.items():
             if not hasattr(self, mode_name):
                 setattr(self, mode_name, mode)
                 logger.info(f"Set '{self.name}' attribute '{mode_name}'.")
 
             all_op_names = [p.name for p in mode.operations.values()]
             selected_operations = {}
-            for pulse_name, pulse in self._pulses.items():
+            for pulse_name, pulse in self.pulses.items():
                 if pulse.name in all_op_names:
                     selected_operations[pulse_name] = pulse
                     if not hasattr(self, pulse_name):
@@ -332,9 +334,9 @@ class Experiment:
 
     def run(self):
         """ """
-        outermost_sweep = list(self._sweeps.values())[0]
+        outermost_sweep = list(self.sweeps.values())[0]
         try:
-            if isinstance(outermost_sweep, QcoreSweep):
+            if not outermost_sweep.is_qua_sweep:
                 self._run_with_qcore_sweep(outermost_sweep)
             else:
                 self._get_filepath()
@@ -344,7 +346,7 @@ class Experiment:
             logger.info(msg)
             self._qm.disconnect()
 
-    def _run_with_qcore_sweep(self, qcore_sweep: QcoreSweep):
+    def _run_with_qcore_sweep(self, qcore_sweep: Sweep):
         """ """
         name, target, points = qcore_sweep.name, qcore_sweep.target, qcore_sweep.data
 
@@ -357,9 +359,9 @@ class Experiment:
                 raise SweepValidationError(message)
             else:
                 if isinstance(target, Mode):
-                    self._modes[target.name] = target
+                    self.modes[target.name] = target
                 elif isinstance(target, Pulse):
-                    self._pulses[target.name] = target
+                    self.pulses[target.name] = target
         elif target is not self:
             message = f"Invalid sweep {target = } of type {type(target)}."
             logger.error(message)
@@ -384,9 +386,9 @@ class Experiment:
             else:
                 for point in points:
                     if isinstance(point, Mode):
-                        self._modes[point.name] = point
+                        self.modes[point.name] = point
                     elif isinstance(point, Pulse):
-                        self._pulses[point.name] = point
+                        self.pulses[point.name] = point
 
         self._configure_resources()
 
@@ -407,16 +409,16 @@ class Experiment:
 
         time.sleep(self.fetch_interval)
 
-        dsets_to_save = {k: dset for k, dset in self._datasets.items() if dset.save}
+        dsets_to_save = {k: dset for k, dset in self.datasets.items() if dset.save}
         sweeps_to_save = {k: swp for k, swp in self._qua_sweeps.items() if swp.save}
 
-        datasaver = Datasaver(self._filepath, *self._datasets.values())
+        datasaver = Datasaver(self._filepath, *self.datasets.values())
 
-        to_plot = [dset for dset in self._datasets.values() if dset.plot]
+        to_plot = [dset for dset in self.datasets.values() if dset.plot]
         plotter = Plotter(self.fetch_interval, self.name, self._filepath, *to_plot)
 
         with datasaver:
-            datasaver.save_metadata(self._get_metadata())
+            datasaver.save_metadata(self.metadata)
             while self._qm.is_processing():
                 if plotter.stop_expt:
                     break
@@ -427,25 +429,25 @@ class Experiment:
                 if data:  # to prevent update when empty data dict is fetched
                     # update sweep data and save to datafile
                     for name, sweep in sweeps_to_save.items():
-                        if isinstance(sweep, QuaSweep):
+                        if sweep.is_qua_sweep:
                             sweep.update(data[name])
                             datasaver.save_data(sweep)
 
                     # update primary datasets first
-                    for name, dset in self._datasets.items():
+                    for name, dset in self.datasets.items():
                         if name in self.primary_datasets:
                             rawdata = (data[name], data[f"{name}_avg"])
                             dset.update(rawdata, prev_count, incoming_count)
 
                     # update derived datasets
-                    for name, dset in self._datasets.items():
+                    for name, dset in self.datasets.items():
                         if dset.inputs:  # is derived dataset with datafn and inputs
                             dsets = []
                             for i in dset.inputs:
-                                if i in self._datasets:
-                                    dsets.append(self._datasets[i])
-                                elif i in self._sweeps:
-                                    dsets.append(self._sweeps[i])
+                                if i in self.datasets:
+                                    dsets.append(self.datasets[i])
+                                elif i in self.sweeps:
+                                    dsets.append(self.sweeps[i])
                             dset.update(dsets, prev_count, incoming_count)
                             data[name] = dset.data
 
@@ -516,11 +518,11 @@ class Experiment:
     def _get_qm(self):
         """pre-requisite: remote stage must already be setup and serving instruments"""
         mode_lo_map = {}
-        for name, mode in self._modes.items():
+        for name, mode in self.modes.items():
             lo_name = mode.lo_name
             if lo_name is not None:
                 try:
-                    mode_lo_map[mode] = self._instruments[lo_name]
+                    mode_lo_map[mode] = self.instruments[lo_name]
                 except KeyError:
                     message = f"'{lo_name = }' for Mode '{name}' not found on stage."
                     logger.error(message)
@@ -537,15 +539,17 @@ class Experiment:
             logger.debug(f"Generated filepath {self._filepath} for '{self.name}'")
         return self._filepath
 
-    def _get_metadata(self):
+    @property
+    def metadata(self):
         """ """
-        inst_mdata = {k: i.snapshot() for k, i in self._instruments.items()}
-        mode_mdata = {k: m.snapshot(flatten=True) for k, m in self._modes.items()}
+        inst_mdata = {k: i.snapshot() for k, i in self.instruments.items()}
+        mode_mdata = {k: m.snapshot(flatten=True) for k, m in self.modes.items()}
 
         xcls = (_Variable, Resource, _ResultSource)  # excluded classes
+        xkeys = ("instruments", "modes", "pulses", "sweeps", "datasets")
         snapshot = {}
         for k, v in self.__dict__.items():
-            if not isinstance(v, xcls) and not k.startswith("_"):
+            if not isinstance(v, xcls) and not k.startswith("_") and not k in xkeys:
                 snapshot[k] = v
 
         return {"instruments": inst_mdata, "modes": mode_mdata, None: snapshot}

@@ -13,8 +13,8 @@ from qcore.helpers.logger import logger
 from qcore.libs.qua_macros import QuaVariable
 
 
-class Sweep:
-    """Sweep specification class, meant for user to conveniently specify sweeps, the specification will be used by Experiment to instantiate BaseSweep classes. We call this class 'Sweep' for user convenience, it is more of a 'SweepInfo' class."""
+class Sweep(QuaVariable):
+    """ """
 
     def __init__(
         self,
@@ -33,20 +33,36 @@ class Sweep:
     ) -> None:
         """ """
         self.name = name
-        self._sweep: BaseSweep = None  # BaseSweep based on this Sweep specification
-        self.start, self.stop, self.step, self.num = start, stop, step, num
-        self.endpoint = endpoint
-        self.points = points
-        self.kind = kind
         self.target = target
+
+        if self.is_qua_sweep:
+            super().__init__(self.dtype, stream=True, tag=self.name, buffer=self.shape)
+        else:
+            super().__init__(self.dtype, stream=False, tag=self.name, buffer=self.shape)
+
         self.dtype = dtype
         self.units = units
         self.save = save
+        self.points = points
+        self.start = start
+        self.stop = stop
+        self.step = step
+        self.num = num
+        self.endpoint = endpoint
+        self.kind = kind
+
+        self.sweep_points = None
+        self._data = None
+        self.index = ...
 
     @property
-    def sweep(self) -> BaseSweep:
+    def is_qua_sweep(self) -> bool:
         """ """
-        # resolution order for obtaining BaseSweep: PointsSweep > EvenSweep > RangeSweep
+        return self.target is None
+
+    def initialize(self) -> None:
+        """ """
+        # resolution order for SweepPoints: PointsSweep > EvenSweep > RangeSweep
 
         pts_kws = {"start": self.start, "stop": self.stop, "endpoint": self.endpoint}
 
@@ -65,45 +81,16 @@ class Sweep:
         else:
             raise ValueError(f"Badly specified sweep '{self.name}'.")
 
-        if self.target is None:
-            self._sweep = QuaSweep(self.name, self.dtype, sweep_pts, units=self.units, save=self.save)
-        else:
-            self._sweep = QcoreSweep(self.target, units=self.units, save=self.save, name=self.name, dtype=self.dtype, sweep_points=sweep_pts)
-
-        return self._sweep
-
-class SweepPoints:
-    """ """
+        self.sweep_points = sweep_pts
 
     @property
-    def data(self) -> np.ndarray:
+    def data(self):
         """ """
-        raise NotImplementedError("Subclass(es) to define data")
+        return self.sweep_points.data if self._data is None else self._data
 
-    @property
-    def metadata(self) -> dict[str, Any]:
+    def update(self, data) -> None:
         """ """
-        raise NotImplementedError("Subclass(es) to define metadata")
-
-
-class BaseSweep:
-    """Base class for all concrete Sweep types to inherit from and implement"""
-
-    def __init__(
-        self,
-        name: str,
-        dtype,
-        sweep_points: SweepPoints,
-        units: str,
-        save: bool,
-    ) -> None:
-        """ """
-        self.name = name
-        self.dtype = dtype
-        self.sweep_points = sweep_points
-        self.units = units
-        self.save = save
-        logger.info(f"Initialized {self} with {self.metadata}.")
+        self._data = data
 
     def __repr__(self) -> str:
         """ """
@@ -111,11 +98,6 @@ class BaseSweep:
             f"{self.__class__.__name__} '{self.name}' "
             f"[{self.sweep_points.__class__.__name__}]"
         )
-
-    @property
-    def data(self) -> np.ndarray:
-        """ """
-        return self.sweep_points.data
 
     @property
     def metadata(self) -> dict[str, Any]:
@@ -137,20 +119,15 @@ class BaseSweep:
         """ """
         return (self.length,)
 
-
-class QuaSweep(BaseSweep, QuaVariable):
-    """Only QuaSweeps are QUA-compatible."""
-
-    def __init__(self, name, dtype, sweep_pts, units=None, save=False) -> None:
-        """ """
-        self._data = None  # not None during live saving
-        BaseSweep.__init__(self, name, dtype, sweep_pts, units, save)
-        QuaVariable.__init__(self, dtype, stream=True, tag=name, buffer=self.shape)
-        self.index = ...  # for live saving
-
     def generate_loop(self):
         """ """
+        message = f"Unsupported Sweep -> QUA loop conversion for {self}."
+        if not self.is_qua_sweep:
+            logger.error(message)
+            raise TypeError(message)
+
         var, dtype = self.qua_variable, self.dtype
+
         if isinstance(self.sweep_points, DiscretePoints):
             return qua.for_each_, var, self.data.tolist()
         elif isinstance(self.sweep_points, RangePoints):
@@ -165,27 +142,22 @@ class QuaSweep(BaseSweep, QuaVariable):
             else:
                 return qua.for_each_, var, data.tolist()
         else:
-            message = f"Unsupported Sweep -> QUA loop conversion for {self}."
             logger.error(message)
             raise TypeError(message)
 
-    @property
-    def data(self):
-        """ """
-        return super().data if self._data is None else self._data
 
-    def update(self, data) -> None:
-        """ """
-        self._data = data
-
-
-class QcoreSweep(BaseSweep):
+class SweepPoints:
     """ """
 
-    def __init__(self, target, **kwargs) -> None:
+    @property
+    def data(self) -> np.ndarray:
         """ """
-        self.target = target
-        super().__init__(**kwargs)
+        raise NotImplementedError("Subclass(es) to define data")
+
+    @property
+    def metadata(self) -> dict[str, Any]:
+        """ """
+        raise NotImplementedError("Subclass(es) to define metadata")
 
 
 class DiscretePoints(SweepPoints):

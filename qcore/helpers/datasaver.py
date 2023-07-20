@@ -11,7 +11,7 @@ import numpy as np
 
 from qcore.variables.datasets import Dataset
 from qcore.helpers.logger import logger
-from qcore.variables.sweeps import BaseSweep
+from qcore.variables.sweeps import Sweep
 
 
 class DataSavingError(Exception):
@@ -28,7 +28,7 @@ class Datasaver:
         """
         self._file = None  # internal reference to the hdf5 file
 
-        self._dataspec: dict[str, Union[Dataset, BaseSweep]] = {}  # internal attr
+        self._dataspec: dict[str, Union[Dataset, Sweep]] = {}  # internal attr
         self._datalog = {}  # to track Dataset size during saving
 
         self._path = path
@@ -54,12 +54,12 @@ class Datasaver:
                     self._dataspec[dataset.name] = dataset
                     self._dimensionalize_dataset(file, dataset)
 
-    def _find_coordinates(self, *datasets: Dataset) -> dict[str, BaseSweep]:
+    def _find_coordinates(self, *datasets: Dataset) -> dict[str, Sweep]:
         """coordinate datasets hold the data of Sweeps"""
         coordinates = {}  # dict prevents duplication of Sweeps
         for dataset in datasets:
             for value in dataset.axes:
-                if isinstance(value, BaseSweep):
+                if isinstance(value, Sweep):
                     coordinates[value.name] = value
         logger.debug(f"Found {len(coordinates)} coordinates in the dataspec.")
         return coordinates
@@ -94,7 +94,7 @@ class Datasaver:
     def _dimensionalize_dataset(self, file: h5py.File, dataset: Dataset) -> None:
         """internal method for attaching dimension scales to a single dataset"""
         h5dset = file[dataset.name]  # h5py Dataset is different from a qcore Dataset
-        labels = [ax.name if isinstance(ax, BaseSweep) else None for ax in dataset.axes]
+        labels = [ax.name if isinstance(ax, Sweep) else None for ax in dataset.axes]
         for idx, label in enumerate(labels):
             if label is not None:
                 h5dset.dims[idx].label = label  # make dimension label
@@ -144,7 +144,7 @@ class Datasaver:
             logger.error(message)
             raise DataSavingError(message)
 
-    def save_data(self, dataset: Union[Dataset, BaseSweep]) -> None:
+    def save_data(self, dataset: Union[Dataset, Sweep]) -> None:
         """insert a batch of data to the dataset at specified index. please call this method within a datasaver context, if not it will throw error.
 
         dataset: Dataset the dataset as declared in the dataspec. raises an error if we encounter a dataset that has not been declared prior to saving.
