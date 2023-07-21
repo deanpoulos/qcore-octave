@@ -84,7 +84,7 @@ class PlotSpec:
             self.plot_item.addItem(plot_data_item)
 
             if self.plot_err:
-                plot_err_item = pg.ErrorBarItem(pen={"width": 1.5})
+                plot_err_item = pg.ErrorBarItem(pen={"color": color, "width": 3})
                 self.plot_err_items.append(plot_err_item)
                 self.plot_item.addItem(plot_err_item)
 
@@ -166,7 +166,7 @@ class Plotter:
     MAX_COLS = 2
 
     MAX_DATA_ITEMS: int = 10  # maximum number of traces in one plot
-    SCATTER_DOT_SIZE: int = 9
+    SCATTER_DOT_SIZE: int = 6
 
     def __init__(
         self, interval: float, expt_name: str, datafile, *datasets: Dataset
