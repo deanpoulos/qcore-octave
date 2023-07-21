@@ -184,5 +184,5 @@ class Dataset(QuaVariable):
         # calculate stderr
         k = prev_count + incoming_count
         estimator = (self.data - self.avg) * (self.data - avg)
-        self.var = (self.var + np.sum(estimator, axis=0)) / (k - 1)
+        self.var = (self.var + np.sum(estimator, axis=0)) / (incoming_count - 1)
         self.avg, self.std, self.sem = avg, np.sqrt(self.var), np.sqrt(self.var / k)
