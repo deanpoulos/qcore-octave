@@ -177,6 +177,7 @@ class Dataset(QuaVariable):
             self.data = self.datafn(input_data, **self.datafn_args)
             input_avg = [d.avg if isinstance(d, Dataset) else d.data for d in datasets]
             avg = self.datafn(input_avg, **self.datafn_args)
+            # TODO only call datafn once on raw data, do running avg on your side
 
         # update index of next batch of data to be inserted in the datafile
         self.index = (slice(prev_count, incoming_count), ...)
