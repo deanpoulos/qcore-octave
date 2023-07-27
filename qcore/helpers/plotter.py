@@ -44,7 +44,7 @@ class PlotSpec:
         shape = dataset.shape
         data_dim = len(shape) - 1  # discard 1 averaging dimension "N"
         self.num_data_items = 1  # default number of data items in one plot item
-        if data_dim == 3 and not self.plot_type == "image":
+        if data_dim == 2 and not self.plot_type == "image":
             self.num_data_items = shape[-2]
         elif data_dim == 1 and self.plot_type == "image":
             msg = f"Invalid dataset {shape = } dimensions for '{self.plot_type}' plot."
