@@ -81,15 +81,12 @@ class QuaVariable:
         adc_trace = self.is_adc_trace
         if adc_trace == 1:
             self.qua_stream.input1().save_all(self.tag)
-            self.qua_stream.input1().average().save(f"{self.tag}_avg")
         elif adc_trace == 2:
             self.qua_stream.input2().save_all(self.tag)
-            self.qua_stream.input2().average().save(f"{self.tag}_avg")
         elif not adc_trace and hasattr(self, "sweep_points"):  # is sweep
             self.qua_stream.buffer(*self.buffer).save(self.tag)
         elif not adc_trace:  # is dataset
             self.qua_stream.buffer(*self.buffer).save_all(self.tag)
-            self.qua_stream.buffer(*self.buffer).average().save(f"{self.tag}_avg")
         else:
             message = f"Failed to process stream for qua variable '{self.tag}'."
             logger.error(message)

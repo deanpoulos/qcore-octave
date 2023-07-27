@@ -19,7 +19,7 @@ class Dataset(QuaVariable):
     """Class that allows users to specify Datasets for handling data obtained from Experiments.
 
     We save raw Dataset data and plot averaged data. Assume the outermost axis to be the averaging axis.
-    
+
     list of acceptable kwargs, their meanings, and default values:
     - data (initial data assigned to the dataset default: np.zeros(dataset.shape))
     - dtype (data type the values are saved to the datafile with, default: float)
@@ -164,27 +164,25 @@ class Dataset(QuaVariable):
             shape.pop(0)
             self.buffer = shape
 
-    def update(self, datasets, prev_count, incoming_count) -> None:
+    def update(self, datasets, pnum, inum) -> None:
         """ """
         # update only if new data found
-        if prev_count == incoming_count:
+        if pnum == inum:
             return
 
         if self.datafn is None:  # primary dataset
-            self.data, avg = datasets  
+            (self.data,) = datasets
         else:  # derived dataset
             input_data = [d.data for d in datasets]
             self.data = self.datafn(input_data, **self.datafn_args)
-            input_avg = [d.avg if isinstance(d, Dataset) else d.data for d in datasets]
-            avg = self.datafn(input_avg, **self.datafn_args)
-            # TODO only call datafn once on raw data, do running avg on your side
 
         # update index of next batch of data to be inserted in the datafile
-        self.index = (slice(prev_count, incoming_count), ...)
+        self.index = (slice(pnum, inum), ...)
 
-        # calculate stderr
-        k = prev_count + incoming_count
+        # calculate avg and stderr
+        k = pnum + inum
+        avg = ((self.avg * pnum) + (np.average(self.data, axis=0) * inum)) / k
         estimator = (self.data - self.avg) * (self.data - avg)
-        self.var = self.var * (prev_count - 1)
-        self.var = (self.var + np.sum(estimator, axis=0)) / (incoming_count - 1)
+        self.var = self.var * (pnum - 1)
+        self.var = (self.var + np.sum(estimator, axis=0)) / (inum - 1)
         self.avg, self.std, self.sem = avg, np.sqrt(self.var), np.sqrt(self.var / k)

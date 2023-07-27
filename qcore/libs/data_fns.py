@@ -26,8 +26,9 @@ def phase(data, freq=None, delay=0, unwrap=True):
 def fft(data, length):
     """ """
     (x,) = data
-    x = x - np.average(x)
-    return (np.abs(np.fft.fft(x)) / length)[: int(length / 2 + 1)]
+    x = x - np.average(x, axis=-1)[:, None]
+    return (np.abs(np.fft.fft(x)) / length)[:, : int(length / 2 + 1)]
+    # TODO make the slices more general
 
 
 def demod(data, freq, length):
