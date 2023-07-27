@@ -38,7 +38,7 @@ def demod(data, freq, length):
     sig = x * np.exp(1j * (2 * np.pi * freq * 1e-9 * t_rel + 0.0))
     period_ns = int(1 / np.abs(freq) * 1e9)
     hann = signal.hann(period_ns * 2, sym=True)
-    hann = hann / np.sum(hann)
+    hann = hann / np.sum(hann, axis=-1)
     demod_signal = np.convolve(sig, hann, "same")
     return np.array([demod_signal.real, demod_signal.imag])
 
