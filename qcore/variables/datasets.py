@@ -171,17 +171,18 @@ class Dataset(QuaVariable):
             return
 
         if self.datafn is None:  # primary dataset
-            (self.data,) = datasets
+            self.data, avg = datasets
         else:  # derived dataset
             input_data = [d.data for d in datasets]
             self.data = self.datafn(input_data, **self.datafn_args)
+            input_avg = [d.avg if isinstance(d, Dataset) else d.data for d in datasets]
+            avg = self.datafn(input_avg, **self.datafn_args)
 
         # update index of next batch of data to be inserted in the datafile
         self.index = (slice(pnum, inum), ...)
 
         # calculate avg and stderr
         k = pnum + inum
-        avg = ((self.avg * pnum) + (np.average(self.data, axis=0) * inum)) / k
         estimator = (self.data - self.avg) * (self.data - avg)
         self.var = self.var * (pnum - 1)
         self.var = (self.var + np.sum(estimator, axis=0)) / (inum - 1)
