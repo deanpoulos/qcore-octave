@@ -51,6 +51,33 @@ def atan(y, x):
     return result.best_fit, result.best_values
 
 
+def cohstate_decay(y, x):
+    """ """
+
+    def fn(x, amp, alpha0, tau, ofs, n):
+        """
+        Poissonian distribution given photon projection:
+        alpha = alpha0 * exp(-xs / tau)
+        """
+        alphas = alpha0 * np.exp(-x / 2.0 / tau)
+        nbars = alphas**2
+        return ofs + amp * nbars**n / 1 * np.exp(-nbars)
+
+    def params(y, x):
+        """ """
+        mul = 1 if (x[-1] > x[0]) else -1
+        amp = mul * (y[-1] - y[0])
+        if amp < 0:
+            ofs = np.max(y)
+        else:
+            ofs = np.min(y)
+        tau = x[-1] / 5
+        return create_params(n=0, amp=amp, ofs=ofs, alpha0=1.0, tau=tau)
+
+    result = Model(fn).fit(y, params(y, x), x=x)
+    return result.best_fit, result.best_values
+
+
 def displacement_cal(y, x):
     """ """
 
