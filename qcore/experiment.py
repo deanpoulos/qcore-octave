@@ -533,7 +533,9 @@ class Experiment:
         """ """
         if self._filepath is None:
             date, time = datetime.now().strftime("%Y-%m-%d %H-%M-%S").split()
-            folderpath = self._folder / "data" / date
+            datafolder = self._folder / "data"
+            datafolder.mkdir(exist_ok=True)
+            folderpath = datafolder / date
             filename = f"{time}_{self.name}{Experiment.DATAFILE_SUFFIX}"
             self._filepath = folderpath / filename
             logger.debug(f"Generated filepath {self._filepath} for '{self.name}'")
