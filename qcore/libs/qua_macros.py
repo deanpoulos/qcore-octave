@@ -21,6 +21,10 @@ def wait(duration: float, *modes):
         qua.wait(int(duration / 4), *(mode.name for mode in modes))
 
 
+def reset_frame(*modes):
+    qua.reset_frame(*(mode.name for mode in modes))
+
+
 def reset_phase(*modes):
     for mode in modes:
         qua.reset_phase(mode.name)
