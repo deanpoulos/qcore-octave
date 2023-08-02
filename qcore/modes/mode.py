@@ -2,6 +2,7 @@
 from typing import Any, Union
 
 from qm import qua
+from qm.qua._dsl import _Variable
 
 from qcore.modes.rf_switch import RFSwitch
 from qcore.helpers.logger import logger
@@ -183,11 +184,16 @@ class Mode(Resource):
         except TypeError:
             num_ampxs = 1
 
-        if phase:
+        if isinstance(phase, _Variable):
+            # assume user wants to do phase rotation if phase is supplied as a QUA variable
+            qua.frame_rotation_2pi(phase, self.name)
+        elif phase:
             qua.frame_rotation_2pi(phase, self.name)
         if num_ampxs == 1:
             qua.play(op_name * qua.amp(ampx), self.name, **kwargs)
         else:
             qua.play(op_name * qua.amp(*ampx), self.name, **kwargs)
-        if phase:
+        if isinstance(phase, _Variable):
+            qua.frame_rotation_2pi(phase, self.name)
+        elif phase:
             qua.frame_rotation_2pi(-phase, self.name)
