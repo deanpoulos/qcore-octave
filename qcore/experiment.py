@@ -527,7 +527,11 @@ class Experiment:
                     message = f"'{lo_name = }' for Mode '{name}' not found on stage."
                     logger.error(message)
                     raise ExperimentInitializationError(message)
-        return QM(modes=mode_lo_map.keys(), oscillators=mode_lo_map.values())
+        return QM(
+            modes=mode_lo_map.keys(),
+            oscillators=mode_lo_map.values(),
+            opx_plus=self.instruments.get("opx_plus"),
+        )
 
     def _get_filepath(self) -> Path:
         """ """
