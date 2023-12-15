@@ -11,9 +11,10 @@ from qcore.helpers.logger import logger
 
 class Readout(Mode):
     """ """
-
-    PORTS_KEYS = (*Mode.PORTS_KEYS, "out")
-    OFFSETS_KEYS = (*Mode.OFFSETS_KEYS, "out")
+    # out1 and out2 have been added to enable I AND Q input to the OPX, as expected
+    # e.g. from the Octave instrument
+    PORTS_KEYS = (*Mode.PORTS_KEYS, "out", "out1", "out2")
+    OFFSETS_KEYS = (*Mode.OFFSETS_KEYS, "out", "out1", "out2")
 
     DEMOD_METHOD_MAP = {
         "sliced": qua.demod.sliced,
@@ -46,9 +47,8 @@ class Readout(Mode):
         demod_type: str = "full",
         demod_args: tuple = None,
     ) -> None:
-        """ """
+        """ demod_type "dual" can be used for demodulating to I and Q from TWO adc inputs. """
         op_name = self._pulse_op_map[pulse.name]
-
         try:
             num_ampxs = len(ampx)
             if num_ampxs != 4:
@@ -69,6 +69,10 @@ class Readout(Mode):
             if demod_type == "full":
                 output_i, output_q = ("cos", var_i), ("sin", var_q)
                 demod_i, demod_q = qua.demod.full(*output_i), qua.demod.full(*output_q)
+            elif demod_type == "dual":
+                demod_i = qua.dual_demod.full("cos", "out1", "sin", "out2", var_i)
+                # todo: make first argument minus_sin
+                demod_q = qua.dual_demod.full("sin", "out1", "cos", "out2", var_q)
             else:
                 try:
                     demod_method = self.DEMOD_METHOD_MAP[demod_type]
