@@ -245,7 +245,7 @@ class Datasaver:
                 value = self._parse_attribute(key, value)
                 if isinstance(value, dict):
                     subgroup = group.create_group(key, track_order=True)
-                    self._save_metadata(subgroup, **value)
+                    self._save_metadata(subgroup, **{str(k): v for k, v in value.items()})
                 else:
                     group.attrs[key] = value
                     logger.debug(f"Set {group = } attr '{key}' with {type(value) = }.")
