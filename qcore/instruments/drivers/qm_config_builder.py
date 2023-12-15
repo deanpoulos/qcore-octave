@@ -294,10 +294,12 @@ class QMConfig(defaultdict):
             self.set_digital_waveform(digital_marker, marker_name)
 
         if pulse_type == "measurement" and pulse.has_mixed_waveforms():
-            iw_cos_name, iw_sin_name = pulse_name + ".cos", pulse_name + ".sin"
+            iw_cos_name, iw_sin_name, iw_minus_sin_name = \
+                (pulse_name + ".cos", pulse_name + ".sin", pulse_name + ".minus_sin")
             pulse_config["integration_weights"]["cos"] = iw_cos_name
             pulse_config["integration_weights"]["sin"] = iw_sin_name
-            self.set_integration_weights(pulse, iw_cos_name, iw_sin_name)
+            pulse_config["integration_weights"]["minus_sin"] = iw_minus_sin_name
+            self.set_integration_weights(pulse, iw_cos_name, iw_sin_name, iw_minus_sin_name)
 
     def set_pulse_length(self, name: str, value: int) -> None:
         """ """
@@ -351,11 +353,13 @@ class QMConfig(defaultdict):
         self["digital_waveforms"][name]["samples"] = waveform.samples
         logger.debug(f"Set digital waveform '{name}'.")
 
-    def set_integration_weights(self, pulse: ReadoutPulse, cos: str, sin: str) -> None:
+    def set_integration_weights(self, pulse: ReadoutPulse, cos: str, sin: str, minus_sin: str = None) -> None:
         """ """
-        cos_weights, sin_weights = pulse.sample_integration_weights()
+        cos_weights, sin_weights, minus_sin_weights = pulse.sample_integration_weights()
         self["integration_weights"][cos] = cos_weights
         self["integration_weights"][sin] = sin_weights
+        if minus_sin is not None:
+            self["integration_weights"][minus_sin] = minus_sin_weights
 
 
 class QMConfigBuilder:

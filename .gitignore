@@ -90,3 +90,5 @@ workspace.code-workspace
 data/
 config/
 logs/
+
+.idea

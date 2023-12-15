@@ -71,8 +71,7 @@ class Readout(Mode):
                 demod_i, demod_q = qua.demod.full(*output_i), qua.demod.full(*output_q)
             elif demod_type == "dual":
                 demod_i = qua.dual_demod.full("cos", "out1", "sin", "out2", var_i)
-                # todo: make first argument minus_sin
-                demod_q = qua.dual_demod.full("sin", "out1", "cos", "out2", var_q)
+                demod_q = qua.dual_demod.full("minus_sin", "out1", "cos", "out2", var_q)
             else:
                 try:
                     demod_method = self.DEMOD_METHOD_MAP[demod_type]
